@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 license = {text = "MIT"}
 keywords = ["mcp", "model-context-protocol", "rag", "skills", "vector-search", "knowledge-graph"]
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "MCP Skills Contributors", email = "contact@example.com"}
 ]
 maintainers = [
     {name = "MCP Skills Team"}
@@ -78,10 +78,10 @@ neo4j = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/mcp-skills"
-Repository = "https://github.com/yourusername/mcp-skills.git"
-Issues = "https://github.com/yourusername/mcp-skills/issues"
-Documentation = "https://github.com/yourusername/mcp-skills/blob/main/README.md"
+Homepage = "https://github.com/bobmatnyc/mcp-skills"
+Repository = "https://github.com/bobmatnyc/mcp-skills.git"
+Issues = "https://github.com/bobmatnyc/mcp-skills/issues"
+Documentation = "https://github.com/bobmatnyc/mcp-skills/blob/main/README.md"
 
 [project.scripts]
 mcp-skills = "mcp_skills.cli.main:cli"

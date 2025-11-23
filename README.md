@@ -1,5 +1,10 @@
 # mcp-skills
 
+[![PyPI version](https://badge.fury.io/py/mcp-skills.svg)](https://badge.fury.io/py/mcp-skills)
+[![Python Versions](https://img.shields.io/pypi/pyversions/mcp-skills)](https://pypi.org/project/mcp-skills/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Test Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)](https://github.com/bobmatnyc/mcp-skills)
+
 **Dynamic RAG-powered skills for code assistants via Model Context Protocol (MCP)**
 
 mcp-skills is a standalone Python application that provides intelligent, context-aware skills to code assistants through hybrid RAG (vector + knowledge graph). Unlike static skills that load at startup, mcp-skills enables runtime skill discovery, automatic recommendations based on your project's toolchain, and dynamic loading optimized for your workflow.
@@ -24,7 +29,7 @@ pip install mcp-skills
 ### From Source
 
 ```bash
-git clone https://github.com/yourusername/mcp-skills.git
+git clone https://github.com/bobmatnyc/mcp-skills.git
 cd mcp-skills
 pip install -e .
 ```
@@ -180,7 +185,7 @@ mcp-skills exposes these tools to code assistants:
 ### Setup Development Environment
 
 ```bash
-git clone https://github.com/yourusername/mcp-skills.git
+git clone https://github.com/bobmatnyc/mcp-skills.git
 cd mcp-skills
 pip install -e ".[dev]"
 ```
@@ -233,10 +238,12 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Links
 
-- **Documentation**: [GitHub Wiki](https://github.com/yourusername/mcp-skills/wiki)
-- **Issue Tracker**: [GitHub Issues](https://github.com/yourusername/mcp-skills/issues)
+- **PyPI Package**: [mcp-skills on PyPI](https://pypi.org/project/mcp-skills/)
+- **Documentation**: [GitHub Wiki](https://github.com/bobmatnyc/mcp-skills/wiki)
+- **Issue Tracker**: [GitHub Issues](https://github.com/bobmatnyc/mcp-skills/issues)
 - **MCP Registry**: [MCP Servers](https://registry.modelcontextprotocol.io)
+- **Publishing Guide**: [docs/publishing.md](docs/publishing.md)
 
 ---
 
-**Status**: 🚧 Early development - MVP in progress
+**Status**: ✅ v0.1.0 - Production Ready | **Test Coverage**: 85-96% | **Tests**: 48 passing

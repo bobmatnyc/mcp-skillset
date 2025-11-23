@@ -1,0 +1,42 @@
+# Include documentation files
+include README.md
+include LICENSE
+include CHANGELOG.md
+include pyproject.toml
+
+# Include source code
+recursive-include src/mcp_skills *.py
+include src/mcp_skills/py.typed
+include src/mcp_skills/VERSION
+
+# Include configuration examples
+include .mcp-skills.yaml.example
+
+# Exclude development and cache files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude *.so
+global-exclude *.dylib
+global-exclude .DS_Store
+
+# Exclude test files
+recursive-exclude tests *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+
+# Exclude build and distribution artifacts
+exclude .gitignore
+exclude .gitattributes
+exclude .github
+recursive-exclude .github *
+exclude .pytest_cache
+recursive-exclude .pytest_cache *
+exclude .mypy_cache
+recursive-exclude .mypy_cache *
+exclude .ruff_cache
+recursive-exclude .ruff_cache *
+exclude htmlcov
+recursive-exclude htmlcov *
+exclude .coverage

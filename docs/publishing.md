@@ -210,7 +210,7 @@ python -m venv prod-test-env
 source prod-test-env/bin/activate
 
 # Install from PyPI
-pip install mcp-skills
+pip install mcp-skillkit
 
 # Verify installation
 mcp-skills --version
@@ -264,7 +264,7 @@ git push origin main
 ### 2. Verify PyPI Page
 
 Check your package page:
-- https://pypi.org/project/mcp-skills/
+- https://pypi.org/project/mcp-skillkit/
 - Verify README renders correctly
 - Check metadata (links, classifiers, etc.)
 - Verify badges and images display
@@ -342,7 +342,7 @@ If you accidentally publish a broken version:
 1. **DO NOT** delete the version from PyPI (not allowed)
 2. **Immediately publish a patch version** (e.g., 0.1.1) with fixes
 3. Use "yank" feature on PyPI:
-   - Go to https://pypi.org/project/mcp-skills/
+   - Go to https://pypi.org/project/mcp-skillkit/
    - Click "Manage" → "Options" → "Yank release"
    - This prevents new installations but doesn't break existing ones
 

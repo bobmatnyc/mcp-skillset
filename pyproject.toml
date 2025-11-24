@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mcp-skills"
+name = "mcp-skillkit"
 version = "0.1.0"
 description = "Dynamic RAG-powered skills for code assistants via Model Context Protocol"
 readme = "README.md"

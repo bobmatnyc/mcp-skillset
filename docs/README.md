@@ -106,7 +106,7 @@ Detailed research covering:
 
 ### Installing mcp-skills
 ```bash
-pip install mcp-skills
+pip install mcp-skillkit
 ```
 
 ### Initial Setup

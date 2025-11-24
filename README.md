@@ -34,6 +34,20 @@ cd mcp-skills
 pip install -e .
 ```
 
+### First-Run Requirements
+
+**Important**: On first run, mcp-skills will automatically download a ~90MB sentence-transformer model (`all-MiniLM-L6-v2`) for semantic search. This happens during the initial `mcp-skills setup` or when you first run any command that requires indexing.
+
+**Requirements**:
+- ✅ Active internet connection
+- ✅ ~100MB free disk space
+- ✅ 2-5 minutes for initial download (depending on connection speed)
+
+**Model Caching**:
+- Models are cached in `~/.cache/huggingface/` for future use
+- Subsequent runs use the cached model (no download required)
+- The cache persists across mcp-skills updates
+
 ## Quick Start
 
 ### 1. Setup
@@ -44,7 +58,10 @@ Run the interactive setup wizard to configure mcp-skills for your project:
 mcp-skills setup
 ```
 
+**Note**: The first run will download the embedding model (~90MB) before proceeding with setup. Allow 2-5 minutes for this initial download. Subsequent runs will be much faster.
+
 This will:
+- Download embedding model (first run only)
 - Detect your project's toolchain
 - Clone relevant skill repositories
 - Build vector + knowledge graph indices
@@ -196,6 +213,50 @@ pip install -e ".[dev]"
 make quality
 ```
 
+### Performance Benchmarks
+
+mcp-skills includes comprehensive performance benchmarks to track and prevent regressions:
+
+```bash
+# Run all benchmarks (includes slow tests)
+make benchmark
+
+# Run fast benchmarks only (skip 10k skill tests)
+make benchmark-fast
+
+# Compare current performance with baseline
+make benchmark-compare
+```
+
+**Benchmark Categories**:
+- **Indexing Performance**: Measure time to index 100, 1000, and 10000 skills
+- **Search Performance**: Track query latency (p50, p95, p99) for vector and hybrid search
+- **Database Performance**: Benchmark SQLite operations (lookup, query, batch insert)
+- **Memory Usage**: Monitor memory consumption during large-scale operations
+
+**Baseline Thresholds**:
+- Index 100 skills: < 10 seconds
+- Index 1000 skills: < 100 seconds
+- Search query (p50): < 100ms
+- Search query (p95): < 500ms
+- SQLite lookup by ID: < 1ms
+
+**Benchmark Results**:
+- Results are saved to `.benchmarks/` directory (git-ignored)
+- Use `make benchmark-compare` to detect performance regressions
+- CI/CD can be configured to fail on significant performance degradation
+
+**Example Output**:
+```
+-------------------------- benchmark: 15 tests --------------------------
+Name (time in ms)                    Min      Max     Mean   StdDev
+---------------------------------------------------------------------
+test_vector_search_latency_100      45.2     52.1    47.8     2.1
+test_lookup_by_id_single             0.3      0.8     0.4     0.1
+test_hybrid_search_end_to_end       89.5    105.2    94.3     5.2
+---------------------------------------------------------------------
+```
+
 ### Linting and Formatting
 
 ```bash
@@ -214,6 +275,132 @@ See [docs/skills/RESOURCES.md](docs/skills/RESOURCES.md) for a comprehensive ind
 - Toolchain-specific skills (Python, TypeScript, Rust, Go, Java)
 - Operations & DevOps skills
 - MCP servers that provide skill-like capabilities
+
+## Troubleshooting
+
+### Model Download Issues
+
+If you encounter problems downloading the embedding model on first run:
+
+#### 1. Check Internet Connection
+
+The model is downloaded from HuggingFace Hub. Verify you can reach:
+```bash
+curl -I https://huggingface.co
+```
+
+#### 2. Manual Model Download
+
+Pre-download the model manually if automatic download fails:
+```bash
+python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
+```
+
+This downloads the model to `~/.cache/huggingface/` and verifies it works.
+
+#### 3. Proxy Configuration
+
+If behind a corporate proxy, configure environment variables:
+```bash
+export HTTP_PROXY=http://proxy.example.com:8080
+export HTTPS_PROXY=http://proxy.example.com:8080
+export HF_ENDPOINT=https://huggingface.co  # Or your mirror
+```
+
+#### 4. Offline/Air-Gapped Installation
+
+For environments without internet access:
+
+**On a machine with internet:**
+1. Download the model:
+   ```bash
+   python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
+   ```
+
+2. Package the model cache:
+   ```bash
+   cd ~/.cache/huggingface
+   tar -czf sentence-transformers-model.tar.gz hub/
+   ```
+
+**On the air-gapped machine:**
+1. Transfer `sentence-transformers-model.tar.gz` to the target machine
+
+2. Extract to the HuggingFace cache directory:
+   ```bash
+   mkdir -p ~/.cache/huggingface
+   cd ~/.cache/huggingface
+   tar -xzf /path/to/sentence-transformers-model.tar.gz
+   ```
+
+3. Install mcp-skills (transfer wheel if needed):
+   ```bash
+   pip install mcp-skills  # Or install from wheel
+   ```
+
+4. Verify the setup:
+   ```bash
+   mcp-skills health
+   ```
+
+#### 5. Custom Cache Location
+
+If you need to use a different cache directory:
+```bash
+export HF_HOME=/custom/path/to/cache
+export TRANSFORMERS_CACHE=/custom/path/to/cache
+mcp-skills setup
+```
+
+#### 6. Disk Space Issues
+
+Check available space in the cache directory:
+```bash
+df -h ~/.cache/huggingface
+```
+
+The model requires ~90MB, but allow ~100MB for temporary files during download.
+
+#### 7. Permission Issues
+
+Ensure the cache directory is writable:
+```bash
+mkdir -p ~/.cache/huggingface
+chmod 755 ~/.cache/huggingface
+```
+
+### Common Issues
+
+#### "Connection timeout" during model download
+- Check internet connection and firewall settings
+- Try manual download (see step 2 above)
+- Configure proxy if behind corporate network (see step 3 above)
+
+#### "No space left on device"
+- Check disk space: `df -h ~/.cache`
+- Clear old HuggingFace cache: `rm -rf ~/.cache/huggingface/*`
+- Use custom cache location (see step 5 above)
+
+#### "Permission denied" on cache directory
+- Fix permissions: `chmod 755 ~/.cache/huggingface`
+- Or use custom cache location with proper permissions
+
+#### Slow initial setup
+- First run downloads ~90MB and builds indices
+- Expected time: 2-10 minutes depending on connection speed and number of skills
+- Subsequent runs use cached model and are much faster
+
+### Getting Help
+
+If you encounter issues not covered here:
+1. Check [GitHub Issues](https://github.com/bobmatnyc/mcp-skills/issues)
+2. Review logs: `~/.mcp-skills/logs/`
+3. Run health check: `mcp-skills health`
+4. Open a new issue with:
+   - Error message and stack trace
+   - Output of `mcp-skills --version`
+   - Operating system and Python version
+   - Steps to reproduce
 
 ## Contributing
 

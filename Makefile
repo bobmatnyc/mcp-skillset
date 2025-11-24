@@ -109,6 +109,21 @@ pre-publish: quality ## Quality checks + secret detection
 	detect-secrets scan
 	@echo "$(GREEN)✅ Pre-publish checks complete$(NC)"
 
+.PHONY: pre-publish-quick
+pre-publish-quick: ## Quick pre-publish checks (skip mypy for initial release)
+	@echo "$(BLUE)📊 Running essential quality checks...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1️⃣  Checking code formatting...$(NC)"
+	ruff check $(SRC_DIR) $(TEST_DIR)
+	black --check $(SRC_DIR) $(TEST_DIR)
+	@echo ""
+	@echo "$(YELLOW)2️⃣  Running core tests (exclude benchmarks)...$(NC)"
+	pytest $(TEST_DIR) --ignore=tests/benchmarks --ignore=tests/test_cli.py --cov-fail-under=80
+	@echo ""
+	@echo "$(BLUE)🔐 Running secret detection...$(NC)"
+	detect-secrets scan
+	@echo "$(GREEN)✅ Quick pre-publish checks complete$(NC)"
+
 .PHONY: safe-release-build
 safe-release-build: pre-publish ## Full quality gate + build
 	@echo "$(BLUE)📦 Building distribution packages...$(NC)"

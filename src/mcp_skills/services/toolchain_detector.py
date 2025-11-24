@@ -291,7 +291,9 @@ class ToolchainDetector:
                 ) * patterns["priority"]
 
                 # Normalize score to [0.0, 1.0] range
-                normalized_score = min(score / theoretical_max, 1.0) if theoretical_max > 0 else 0.0
+                normalized_score = (
+                    min(score / theoretical_max, 1.0) if theoretical_max > 0 else 0.0
+                )
                 scores[language] = normalized_score
 
         return scores
@@ -423,7 +425,10 @@ class ToolchainDetector:
                 if req_path.exists():
                     try:
                         content = req_path.read_text()
-                        if "pytest" in content.lower() and "pytest" not in test_frameworks:
+                        if (
+                            "pytest" in content.lower()
+                            and "pytest" not in test_frameworks
+                        ):
                             test_frameworks.append("pytest")
                         if "unittest" in content.lower():
                             test_frameworks.append("unittest")
@@ -501,7 +506,10 @@ class ToolchainDetector:
                 try:
                     content = req_path.read_text().lower()
                     for framework, patterns in framework_patterns.items():
-                        if any(pattern in content for pattern in patterns) and framework not in frameworks:
+                        if (
+                            any(pattern in content for pattern in patterns)
+                            and framework not in frameworks
+                        ):
                             frameworks.append(framework)
                 except (FileNotFoundError, PermissionError) as e:
                     logger.debug(f"Failed to read {req_file}: {e}")
@@ -512,7 +520,10 @@ class ToolchainDetector:
             try:
                 content = pyproject.read_text().lower()
                 for framework, patterns in framework_patterns.items():
-                    if any(pattern in content for pattern in patterns) and framework not in frameworks:
+                    if (
+                        any(pattern in content for pattern in patterns)
+                        and framework not in frameworks
+                    ):
                         frameworks.append(framework)
             except (FileNotFoundError, PermissionError) as e:
                 logger.debug(f"Failed to read pyproject.toml: {e}")

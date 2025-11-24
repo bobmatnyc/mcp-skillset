@@ -77,9 +77,7 @@ def indexing_engine(temp_storage, sample_skills):
     # Create mock SkillManager
     skill_manager = SkillManager()
     skill_manager._skill_cache = {skill.id: skill for skill in sample_skills}
-    skill_manager._skill_paths = {
-        skill.id: skill.file_path for skill in sample_skills
-    }
+    skill_manager._skill_paths = {skill.id: skill.file_path for skill in sample_skills}
 
     # Create indexing engine
     engine = IndexingEngine(
@@ -171,9 +169,7 @@ class TestIndexingEngineIndexing:
         # Note: May be empty if indexing order matters
         assert isinstance(same_category, list)
 
-    def test_extract_relationships_includes_tags(
-        self, indexing_engine, sample_skills
-    ):
+    def test_extract_relationships_includes_tags(self, indexing_engine, sample_skills):
         """Test that tag-based relationships are extracted."""
         pytest_skill = sample_skills[0]
         relationships = indexing_engine.extract_relationships(pytest_skill)
@@ -218,9 +214,7 @@ class TestIndexingEngineReindexAll:
         with pytest.raises(RuntimeError, match="SkillManager not set"):
             engine.reindex_all()
 
-    def test_reindex_all_indexes_discovered_skills(
-        self, temp_storage, sample_skills
-    ):
+    def test_reindex_all_indexes_discovered_skills(self, temp_storage, sample_skills):
         """Test that reindex_all indexes all discovered skills."""
         skill_manager = SkillManager()
         skill_manager._skill_cache = {skill.id: skill for skill in sample_skills}
@@ -234,9 +228,7 @@ class TestIndexingEngineReindexAll:
 
         skill_manager.discover_skills = mock_discover
 
-        engine = IndexingEngine(
-            storage_path=temp_storage, skill_manager=skill_manager
-        )
+        engine = IndexingEngine(storage_path=temp_storage, skill_manager=skill_manager)
         stats = engine.reindex_all()
 
         assert stats.total_skills == len(sample_skills)
@@ -284,9 +276,7 @@ class TestIndexingEngineSearch:
 
     def test_search_with_category_filter(self, indexing_engine):
         """Test that category filter works."""
-        results = indexing_engine.search(
-            "python", category="testing", top_k=5
-        )
+        results = indexing_engine.search("python", category="testing", top_k=5)
 
         # All results should be in testing category
         for result in results:
@@ -338,9 +328,7 @@ class TestIndexingEngineGetRelatedSkills:
         related_ids = [s.id for s in related]
         assert skill.id not in related_ids
 
-    def test_get_related_skills_missing_skill_returns_empty(
-        self, indexing_engine
-    ):
+    def test_get_related_skills_missing_skill_returns_empty(self, indexing_engine):
         """Test that missing skill returns empty list."""
         related = indexing_engine.get_related_skills("nonexistent-skill", max_depth=2)
         assert len(related) == 0
@@ -411,16 +399,12 @@ class TestIndexingEngineHybridSearch:
 
         assert isinstance(results, list)
 
-    def test_combine_results_weights_scores(
-        self, indexing_engine, sample_skills
-    ):
+    def test_combine_results_weights_scores(self, indexing_engine, sample_skills):
         """Test that result combination uses proper weighting."""
         vector_results = [
             {"skill_id": sample_skills[0].id, "score": 0.9, "metadata": {}}
         ]
-        graph_results = [
-            {"skill_id": sample_skills[0].id, "score": 0.8}
-        ]
+        graph_results = [{"skill_id": sample_skills[0].id, "score": 0.8}]
 
         combined = indexing_engine._combine_results(vector_results, graph_results)
 

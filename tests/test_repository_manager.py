@@ -350,9 +350,7 @@ class TestRepositoryManager:
             manager._generate_repo_id("https://github.com/anthropics/skills.git")
             == "anthropics/skills"
         )
-        assert (
-            manager._generate_repo_id("https://github.com/test/repo") == "test/repo"
-        )
+        assert manager._generate_repo_id("https://github.com/test/repo") == "test/repo"
 
     def test_generate_repo_id_ssh(self, tmp_path: Path) -> None:
         """Test repository ID generation from SSH URLs."""

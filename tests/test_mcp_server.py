@@ -286,16 +286,17 @@ class TestRecommendSkills:
         mock_engine = MagicMock()
         mock_engine.search = MagicMock(return_value=[mock_scored_skill])
 
-        with patch(
-            "mcp_skills.mcp.tools.skill_tools.get_toolchain_detector",
-            return_value=mock_detector,
-        ), patch(
-            "mcp_skills.mcp.tools.skill_tools.get_indexing_engine",
-            return_value=mock_engine,
+        with (
+            patch(
+                "mcp_skills.mcp.tools.skill_tools.get_toolchain_detector",
+                return_value=mock_detector,
+            ),
+            patch(
+                "mcp_skills.mcp.tools.skill_tools.get_indexing_engine",
+                return_value=mock_engine,
+            ),
         ):
-            result = await recommend_skills(
-                project_path=str(project_dir), limit=5
-            )
+            result = await recommend_skills(project_path=str(project_dir), limit=5)
 
             assert result["status"] == "completed"
             assert result["recommendation_type"] == "project_based"
@@ -326,12 +327,15 @@ class TestRecommendSkills:
         mock_engine = MagicMock()
         mock_engine.get_related_skills = MagicMock(return_value=[related_skill])
 
-        with patch(
-            "mcp_skills.mcp.tools.skill_tools.get_indexing_engine",
-            return_value=mock_engine,
-        ), patch(
-            "mcp_skills.mcp.tools.skill_tools.get_skill_manager",
-            return_value=mock_manager,
+        with (
+            patch(
+                "mcp_skills.mcp.tools.skill_tools.get_indexing_engine",
+                return_value=mock_engine,
+            ),
+            patch(
+                "mcp_skills.mcp.tools.skill_tools.get_skill_manager",
+                return_value=mock_manager,
+            ),
         ):
             result = await recommend_skills(current_skill="pytest-skill", limit=5)
 
@@ -351,12 +355,15 @@ class TestRecommendSkills:
     @pytest.mark.asyncio
     async def test_recommend_skills_invalid_project_path(self):
         """Test recommendations with invalid project path."""
-        with patch(
-            "mcp_skills.mcp.tools.skill_tools.get_toolchain_detector",
-            return_value=Mock(),
-        ), patch(
-            "mcp_skills.mcp.tools.skill_tools.get_indexing_engine",
-            return_value=MagicMock(),
+        with (
+            patch(
+                "mcp_skills.mcp.tools.skill_tools.get_toolchain_detector",
+                return_value=Mock(),
+            ),
+            patch(
+                "mcp_skills.mcp.tools.skill_tools.get_indexing_engine",
+                return_value=MagicMock(),
+            ),
         ):
             result = await recommend_skills(project_path="/nonexistent/path")
 

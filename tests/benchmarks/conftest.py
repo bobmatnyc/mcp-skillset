@@ -85,11 +85,11 @@ def create_sample_skill(index: int, category: str = "testing") -> Skill:
         ),
         category=selected_category,
         tags=selected_tags + [f"skill-{index}"],
-        dependencies=[
-            f"benchmark-repo/skill-{(index - 1):05d}" for i in range(min(2, index))
-        ]
-        if index > 0
-        else [],
+        dependencies=(
+            [f"benchmark-repo/skill-{(index - 1):05d}" for i in range(min(2, index))]
+            if index > 0
+            else []
+        ),
         examples=[
             f"Example {index}: Primary use case",
             f"Example {index + 1}: Advanced scenario",

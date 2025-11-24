@@ -97,7 +97,8 @@ def real_skill_repo(tmp_path: Path) -> Generator[Path, None, None]:
 
     # Create README
     readme = repo_dir / "README.md"
-    readme.write_text("""# Test Skills Repository
+    readme.write_text(
+        """# Test Skills Repository
 
 This is a test skills repository for E2E testing.
 
@@ -108,12 +109,14 @@ This is a test skills repository for E2E testing.
 - python-debugging: Python debugging tools
 - typescript-testing: TypeScript testing with Jest
 - docker-deployment: Docker deployment skills
-""")
+"""
+    )
 
     # Create pytest testing skill
     pytest_skill_dir = repo_dir / "testing" / "pytest"
     pytest_skill_dir.mkdir(parents=True)
-    (pytest_skill_dir / "SKILL.md").write_text("""---
+    (pytest_skill_dir / "SKILL.md").write_text(
+        """---
 name: pytest-testing
 description: Professional Python testing with pytest framework
 category: testing
@@ -175,12 +178,14 @@ def test_with_fixture(sample_data):
 def test_increment(input, expected):
     assert input + 1 == expected
 ```
-""")
+"""
+    )
 
     # Create Flask web skill
     flask_skill_dir = repo_dir / "web" / "flask"
     flask_skill_dir.mkdir(parents=True)
-    (flask_skill_dir / "SKILL.md").write_text("""---
+    (flask_skill_dir / "SKILL.md").write_text(
+        """---
 name: flask-web
 description: Build web applications with Flask framework
 category: architecture
@@ -230,12 +235,14 @@ app = Flask(__name__)
 def get_user(user_id):
     return jsonify({"id": user_id, "name": "Test User"})
 ```
-""")
+"""
+    )
 
     # Create Python debugging skill
     debug_skill_dir = repo_dir / "debugging" / "python"
     debug_skill_dir.mkdir(parents=True)
-    (debug_skill_dir / "SKILL.md").write_text("""---
+    (debug_skill_dir / "SKILL.md").write_text(
+        """---
 name: python-debugging
 description: Debug Python applications effectively with pdb and logging
 category: debugging
@@ -294,12 +301,14 @@ def process():
     logger.debug("Starting process")
     logger.info("Process completed")
 ```
-""")
+"""
+    )
 
     # Create TypeScript testing skill
     ts_skill_dir = repo_dir / "testing" / "typescript"
     ts_skill_dir.mkdir(parents=True)
-    (ts_skill_dir / "SKILL.md").write_text("""---
+    (ts_skill_dir / "SKILL.md").write_text(
+        """---
 name: typescript-testing
 description: TypeScript testing with Jest and Testing Library
 category: testing
@@ -341,12 +350,14 @@ describe('Calculator', () => {
   });
 });
 ```
-""")
+"""
+    )
 
     # Create Docker deployment skill
     docker_skill_dir = repo_dir / "deployment" / "docker"
     docker_skill_dir.mkdir(parents=True)
-    (docker_skill_dir / "SKILL.md").write_text("""---
+    (docker_skill_dir / "SKILL.md").write_text(
+        """---
 name: docker-deployment
 description: Deploy applications using Docker containers
 category: deployment
@@ -390,7 +401,8 @@ RUN pip install -r requirements.txt
 COPY . .
 CMD ["python", "app.py"]
 ```
-""")
+"""
+    )
 
     # Commit all files
     repo.index.add(["*"])
@@ -531,7 +543,8 @@ def sample_python_project_e2e(tmp_path: Path) -> Generator[Path, None, None]:
     project_dir.mkdir()
 
     # Create pyproject.toml
-    (project_dir / "pyproject.toml").write_text("""[project]
+    (project_dir / "pyproject.toml").write_text(
+        """[project]
 name = "sample-app"
 version = "1.0.0"
 description = "Sample Python application for testing"
@@ -561,14 +574,16 @@ line-length = 100
 
 [tool.ruff]
 line-length = 100
-""")
+"""
+    )
 
     # Create src directory with modules
     src_dir = project_dir / "src"
     src_dir.mkdir()
     (src_dir / "__init__.py").write_text("")
 
-    (src_dir / "app.py").write_text("""\"\"\"Main Flask application.\"\"\"
+    (src_dir / "app.py").write_text(
+        """\"\"\"Main Flask application.\"\"\"
 
 from flask import Flask, jsonify
 
@@ -587,9 +602,11 @@ def health():
 
 if __name__ == "__main__":
     app.run(debug=True)
-""")
+"""
+    )
 
-    (src_dir / "utils.py").write_text("""\"\"\"Utility functions.\"\"\"
+    (src_dir / "utils.py").write_text(
+        """\"\"\"Utility functions.\"\"\"
 
 
 def process_data(data: dict) -> dict:
@@ -600,14 +617,16 @@ def process_data(data: dict) -> dict:
 def validate_input(value: str) -> bool:
     \"\"\"Validate input string.\"\"\"
     return len(value) > 0 and value.strip() == value
-""")
+"""
+    )
 
     # Create tests directory
     tests_dir = project_dir / "tests"
     tests_dir.mkdir()
     (tests_dir / "__init__.py").write_text("")
 
-    (tests_dir / "test_app.py").write_text("""\"\"\"Tests for Flask application.\"\"\"
+    (tests_dir / "test_app.py").write_text(
+        """\"\"\"Tests for Flask application.\"\"\"
 
 import pytest
 from src.app import app
@@ -630,9 +649,11 @@ def test_health(client):
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json["status"] == "healthy"
-""")
+"""
+    )
 
-    (tests_dir / "test_utils.py").write_text("""\"\"\"Tests for utility functions.\"\"\"
+    (tests_dir / "test_utils.py").write_text(
+        """\"\"\"Tests for utility functions.\"\"\"
 
 from src.utils import process_data, validate_input
 
@@ -653,18 +674,22 @@ def test_validate_input_empty():
 
 def test_validate_input_whitespace():
     assert validate_input("  hello  ") is False
-""")
+"""
+    )
 
     # Create pytest.ini
-    (project_dir / "pytest.ini").write_text("""[pytest]
+    (project_dir / "pytest.ini").write_text(
+        """[pytest]
 testpaths = tests
 python_files = test_*.py
 python_classes = Test*
 python_functions = test_*
-""")
+"""
+    )
 
     # Create README
-    (project_dir / "README.md").write_text("""# Sample Python Application
+    (project_dir / "README.md").write_text(
+        """# Sample Python Application
 
 A sample Flask application for testing mcp-skills.
 
@@ -685,10 +710,12 @@ pytest
 ```bash
 python src/app.py
 ```
-""")
+"""
+    )
 
     # Create .gitignore
-    (project_dir / ".gitignore").write_text("""__pycache__/
+    (project_dir / ".gitignore").write_text(
+        """__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -711,7 +738,8 @@ wheels/
 .pytest_cache/
 .coverage
 htmlcov/
-""")
+"""
+    )
 
     yield project_dir
 
@@ -730,66 +758,81 @@ def sample_typescript_project_e2e(tmp_path: Path) -> Generator[Path, None, None]
     project_dir.mkdir()
 
     # Create package.json
-    (project_dir / "package.json").write_text(json.dumps({
-        "name": "sample-typescript-app",
-        "version": "1.0.0",
-        "description": "Sample TypeScript application",
-        "scripts": {
-            "build": "tsc",
-            "test": "jest",
-            "lint": "eslint src/**/*.ts"
-        },
-        "devDependencies": {
-            "typescript": "^5.2.0",
-            "jest": "^29.7.0",
-            "@types/jest": "^29.5.0",
-            "@types/node": "^20.8.0",
-            "ts-jest": "^29.1.0",
-            "eslint": "^8.51.0"
-        }
-    }, indent=2))
+    (project_dir / "package.json").write_text(
+        json.dumps(
+            {
+                "name": "sample-typescript-app",
+                "version": "1.0.0",
+                "description": "Sample TypeScript application",
+                "scripts": {
+                    "build": "tsc",
+                    "test": "jest",
+                    "lint": "eslint src/**/*.ts",
+                },
+                "devDependencies": {
+                    "typescript": "^5.2.0",
+                    "jest": "^29.7.0",
+                    "@types/jest": "^29.5.0",
+                    "@types/node": "^20.8.0",
+                    "ts-jest": "^29.1.0",
+                    "eslint": "^8.51.0",
+                },
+            },
+            indent=2,
+        )
+    )
 
     # Create tsconfig.json
-    (project_dir / "tsconfig.json").write_text(json.dumps({
-        "compilerOptions": {
-            "target": "ES2020",
-            "module": "commonjs",
-            "lib": ["ES2020"],
-            "outDir": "./dist",
-            "rootDir": "./src",
-            "strict": True,
-            "esModuleInterop": True,
-            "skipLibCheck": True,
-            "forceConsistentCasingInFileNames": True
-        },
-        "include": ["src/**/*"],
-        "exclude": ["node_modules", "dist", "**/*.test.ts"]
-    }, indent=2))
+    (project_dir / "tsconfig.json").write_text(
+        json.dumps(
+            {
+                "compilerOptions": {
+                    "target": "ES2020",
+                    "module": "commonjs",
+                    "lib": ["ES2020"],
+                    "outDir": "./dist",
+                    "rootDir": "./src",
+                    "strict": True,
+                    "esModuleInterop": True,
+                    "skipLibCheck": True,
+                    "forceConsistentCasingInFileNames": True,
+                },
+                "include": ["src/**/*"],
+                "exclude": ["node_modules", "dist", "**/*.test.ts"],
+            },
+            indent=2,
+        )
+    )
 
     # Create jest.config.js
-    (project_dir / "jest.config.js").write_text("""module.exports = {
+    (project_dir / "jest.config.js").write_text(
+        """module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.test.ts'],
 };
-""")
+"""
+    )
 
     # Create src directory
     src_dir = project_dir / "src"
     src_dir.mkdir()
 
-    (src_dir / "index.ts").write_text("""export function greet(name: string): string {
+    (src_dir / "index.ts").write_text(
+        """export function greet(name: string): string {
   return `Hello, ${name}!`;
 }
 
 export function add(a: number, b: number): number {
   return a + b;
 }
-""")
+"""
+    )
 
-    (src_dir / "index.test.ts").write_text("""import { greet, add } from './index';
+    (src_dir / "index.test.ts").write_text(
+        """import { greet, add } from './index';
 
 describe('greet', () => {
   it('should greet with name', () => {
@@ -802,10 +845,12 @@ describe('add', () => {
     expect(add(1, 2)).toBe(3);
   });
 });
-""")
+"""
+    )
 
     # Create README
-    (project_dir / "README.md").write_text("""# Sample TypeScript Application
+    (project_dir / "README.md").write_text(
+        """# Sample TypeScript Application
 
 A sample TypeScript application for testing mcp-skills.
 
@@ -826,6 +871,7 @@ npm run build
 ```bash
 npm test
 ```
-""")
+"""
+    )
 
     yield project_dir

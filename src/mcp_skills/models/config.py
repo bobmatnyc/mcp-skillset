@@ -24,9 +24,7 @@ class VectorStoreConfig(BaseSettings):
         "all-MiniLM-L6-v2", description="Sentence transformer model"
     )
     collection_name: str = Field("skills_v1", description="Collection name")
-    persist_directory: Path | None = Field(
-        None, description="Persistence directory"
-    )
+    persist_directory: Path | None = Field(None, description="Persistence directory")
 
 
 class KnowledgeGraphConfig(BaseSettings):
@@ -40,9 +38,7 @@ class KnowledgeGraphConfig(BaseSettings):
     backend: Literal["networkx", "neo4j"] = Field(
         "networkx", description="Knowledge graph backend"
     )
-    persist_path: Path | None = Field(
-        None, description="Graph persistence path"
-    )
+    persist_path: Path | None = Field(None, description="Graph persistence path")
 
 
 class ServerConfig(BaseSettings):
@@ -118,9 +114,7 @@ class MCPSkillsConfig(BaseSettings):
     toolchain_cache_duration: int = Field(
         3600, description="Toolchain cache duration (seconds)", ge=0
     )
-    auto_recommend: bool = Field(
-        True, description="Auto-recommend skills on detection"
-    )
+    auto_recommend: bool = Field(True, description="Auto-recommend skills on detection")
 
     class Config:
         """Pydantic configuration."""
@@ -141,9 +135,7 @@ class MCPSkillsConfig(BaseSettings):
         if self.vector_store.persist_directory is None:
             self.vector_store.persist_directory = self.indices_dir / "vector_store"
         if self.knowledge_graph.persist_path is None:
-            self.knowledge_graph.persist_path = (
-                self.indices_dir / "knowledge_graph.pkl"
-            )
+            self.knowledge_graph.persist_path = self.indices_dir / "knowledge_graph.pkl"
 
         # Create directories
         self.base_dir.mkdir(parents=True, exist_ok=True)

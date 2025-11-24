@@ -305,7 +305,9 @@ async def recommend_skills(
                 }
 
             # Build query from detected toolchains
-            all_languages = [toolchain_info.primary_language] + toolchain_info.secondary_languages
+            all_languages = [
+                toolchain_info.primary_language
+            ] + toolchain_info.secondary_languages
             frameworks = toolchain_info.frameworks or []
             query = " ".join(all_languages + frameworks)
 

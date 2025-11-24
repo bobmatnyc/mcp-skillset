@@ -308,9 +308,7 @@ class TestSearchPerformance:
 
         benchmark(search_query)
 
-    def test_graph_search_latency(
-        self, benchmark, indexed_engine_100: IndexingEngine
-    ):
+    def test_graph_search_latency(self, benchmark, indexed_engine_100: IndexingEngine):
         """Benchmark graph search latency.
 
         Target: < 10ms (graph traversal should be very fast)
@@ -351,9 +349,7 @@ class TestSearchPerformance:
 
         def hybrid_search():
             """Execute full hybrid search."""
-            results = indexed_engine_100.search(
-                query="python testing tools", top_k=10
-            )
+            results = indexed_engine_100.search(query="python testing tools", top_k=10)
             return results
 
         benchmark(hybrid_search)
@@ -420,9 +416,7 @@ class TestDatabasePerformance:
     - Index effectiveness
     """
 
-    def test_lookup_by_id_single(
-        self, benchmark, metadata_store_100: MetadataStore
-    ):
+    def test_lookup_by_id_single(self, benchmark, metadata_store_100: MetadataStore):
         """Benchmark SQLite lookup by ID (indexed column).
 
         Target: < 1ms (indexed lookup should be very fast)
@@ -444,9 +438,7 @@ class TestDatabasePerformance:
 
         benchmark(lookup_repository)
 
-    def test_list_all_repositories(
-        self, benchmark, metadata_store_100: MetadataStore
-    ):
+    def test_list_all_repositories(self, benchmark, metadata_store_100: MetadataStore):
         """Benchmark SQLite query to list all repositories.
 
         Target: < 10ms for 100 repositories
@@ -515,9 +507,7 @@ class TestDatabasePerformance:
 
         benchmark(list_all)
 
-    def test_batch_insert_performance(
-        self, benchmark, benchmark_storage_path: Path
-    ):
+    def test_batch_insert_performance(self, benchmark, benchmark_storage_path: Path):
         """Benchmark batch insert of 100 repositories.
 
         Target: < 1 second for 100 inserts

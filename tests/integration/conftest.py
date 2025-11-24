@@ -196,7 +196,9 @@ def sample_skill_repo(
 
     # Create README
     readme = repo_dir / "README.md"
-    readme.write_text("# Test Skills Repository\n\nTest skills for integration testing.")
+    readme.write_text(
+        "# Test Skills Repository\n\nTest skills for integration testing."
+    )
 
     # Commit files
     repo.index.add(["*"])

@@ -67,15 +67,21 @@ def setup(project_dir: str, config: str, auto: bool) -> None:
         project_path = Path(project_dir).resolve()
         toolchain = detector.detect(project_path)
 
-        console.print(f"  ✓ Primary language: [bold]{toolchain.primary_language}[/bold]")
+        console.print(
+            f"  ✓ Primary language: [bold]{toolchain.primary_language}[/bold]"
+        )
         if toolchain.frameworks:
             console.print(f"  ✓ Frameworks: {', '.join(toolchain.frameworks)}")
         if toolchain.test_frameworks:
-            console.print(f"  ✓ Test frameworks: {', '.join(toolchain.test_frameworks)}")
+            console.print(
+                f"  ✓ Test frameworks: {', '.join(toolchain.test_frameworks)}"
+            )
         console.print(f"  ✓ Confidence: {toolchain.confidence:.0%}\n")
 
         # 2. Repository cloning
-        console.print("[bold cyan]Step 2/5:[/bold cyan] Setting up skill repositories...")
+        console.print(
+            "[bold cyan]Step 2/5:[/bold cyan] Setting up skill repositories..."
+        )
         repo_manager = RepositoryManager()
 
         # Get default repos or prompt user
@@ -91,7 +97,9 @@ def setup(project_dir: str, config: str, auto: bool) -> None:
                 repos_to_add = RepositoryManager.DEFAULT_REPOS
             else:
                 repos_to_add = []
-                console.print("  [dim]You can add repositories later with: mcp-skills repo add <url>[/dim]")
+                console.print(
+                    "  [dim]You can add repositories later with: mcp-skills repo add <url>[/dim]"
+                )
 
         # Clone repositories
         added_repos = []
@@ -102,7 +110,9 @@ def setup(project_dir: str, config: str, auto: bool) -> None:
                 existing = repo_manager.get_repository(repo_id)
 
                 if existing:
-                    console.print(f"  ⊙ Repository already exists: {repo_config['url']}")
+                    console.print(
+                        f"  ⊙ Repository already exists: {repo_config['url']}"
+                    )
                     added_repos.append(existing)
                 else:
                     console.print(f"  + Cloning: {repo_config['url']}")
@@ -114,11 +124,15 @@ def setup(project_dir: str, config: str, auto: bool) -> None:
                     added_repos.append(repo)
                     console.print(f"    ✓ Cloned {repo.skill_count} skills")
             except Exception as e:
-                console.print(f"    [red]✗ Failed to clone {repo_config['url']}: {e}[/red]")
+                console.print(
+                    f"    [red]✗ Failed to clone {repo_config['url']}: {e}[/red]"
+                )
                 logger.error(f"Repository clone failed: {e}")
 
         if not added_repos:
-            console.print("\n  [yellow]No repositories configured. Add some with: mcp-skills repo add <url>[/yellow]")
+            console.print(
+                "\n  [yellow]No repositories configured. Add some with: mcp-skills repo add <url>[/yellow]"
+            )
 
         console.print()
 
@@ -138,7 +152,9 @@ def setup(project_dir: str, config: str, auto: bool) -> None:
                 progress.update(task, completed=True)
                 console.print(f"  ✓ Indexed {stats.total_skills} skills")
                 console.print(f"  ✓ Vector store: {stats.vector_store_size // 1024} KB")
-                console.print(f"  ✓ Knowledge graph: {stats.graph_nodes} nodes, {stats.graph_edges} edges\n")
+                console.print(
+                    f"  ✓ Knowledge graph: {stats.graph_nodes} nodes, {stats.graph_edges} edges\n"
+                )
             except Exception as e:
                 progress.stop()
                 console.print(f"  [red]✗ Indexing failed: {e}[/red]")
@@ -182,11 +198,17 @@ def setup(project_dir: str, config: str, auto: bool) -> None:
             console.print("[bold green]✓ Setup complete![/bold green]\n")
             console.print("Next steps:")
             console.print("  1. Start MCP server: [cyan]mcp-skills mcp[/cyan]")
-            console.print("  2. Search skills: [cyan]mcp-skills search 'python testing'[/cyan]")
+            console.print(
+                "  2. Search skills: [cyan]mcp-skills search 'python testing'[/cyan]"
+            )
             console.print("  3. Get recommendations: [cyan]mcp-skills recommend[/cyan]")
         else:
-            console.print("[bold yellow]⚠ Setup completed with warnings[/bold yellow]\n")
-            console.print("Please check the errors above and run setup again if needed.")
+            console.print(
+                "[bold yellow]⚠ Setup completed with warnings[/bold yellow]\n"
+            )
+            console.print(
+                "Please check the errors above and run setup again if needed."
+            )
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Setup cancelled by user[/yellow]")
@@ -237,6 +259,7 @@ def mcp(dev: bool) -> None:
     except Exception as e:
         console.print(f"\n[red]❌ Server failed to start: {e}[/red]")
         import traceback
+
         if dev:
             traceback.print_exc()
         raise SystemExit(1)
@@ -329,7 +352,9 @@ def list(category: str | None, compact: bool) -> None:
             console.print("[yellow]No skills found[/yellow]")
             if category:
                 console.print(f"\nNo skills in category: {category}")
-                console.print("Available categories: testing, debugging, refactoring, etc.")
+                console.print(
+                    "Available categories: testing, debugging, refactoring, etc."
+                )
             return
 
         # Display skills
@@ -411,7 +436,9 @@ def info(skill_id: str) -> None:
             metadata_content += f"[bold cyan]Author:[/bold cyan] {skill.author}\n"
 
         if skill.tags:
-            metadata_content += f"[bold cyan]Tags:[/bold cyan] {', '.join(skill.tags)}\n"
+            metadata_content += (
+                f"[bold cyan]Tags:[/bold cyan] {', '.join(skill.tags)}\n"
+            )
 
         metadata_panel = Panel(
             metadata_content.rstrip(),
@@ -452,7 +479,9 @@ def info(skill_id: str) -> None:
 
         # Examples panel (if any)
         if skill.examples:
-            examples_content = f"\n{len(skill.examples)} example(s) available in full instructions"
+            examples_content = (
+                f"\n{len(skill.examples)} example(s) available in full instructions"
+            )
             examples_panel = Panel(
                 examples_content,
                 title="Examples",
@@ -557,10 +586,16 @@ def health() -> None:
             stats = indexing_engine.get_stats()
 
             if stats.total_skills > 0:
-                console.print(f"  [green]✓[/green] Connected ({stats.total_skills} skills indexed)")
-                console.print(f"  [green]✓[/green] Storage: {stats.vector_store_size // 1024} KB")
+                console.print(
+                    f"  [green]✓[/green] Connected ({stats.total_skills} skills indexed)"
+                )
+                console.print(
+                    f"  [green]✓[/green] Storage: {stats.vector_store_size // 1024} KB"
+                )
             else:
-                console.print("  [yellow]⚠[/yellow] Connected but empty (run: mcp-skills index)")
+                console.print(
+                    "  [yellow]⚠[/yellow] Connected but empty (run: mcp-skills index)"
+                )
                 all_healthy = False
         except Exception as e:
             console.print(f"  [red]✗[/red] Connection failed: {e}")
@@ -572,9 +607,13 @@ def health() -> None:
         console.print("[bold cyan]Knowledge Graph:[/bold cyan]")
         try:
             if stats.graph_nodes > 0:
-                console.print(f"  [green]✓[/green] {stats.graph_nodes} nodes, {stats.graph_edges} edges")
+                console.print(
+                    f"  [green]✓[/green] {stats.graph_nodes} nodes, {stats.graph_edges} edges"
+                )
             else:
-                console.print("  [yellow]⚠[/yellow] Empty graph (run: mcp-skills index)")
+                console.print(
+                    "  [yellow]⚠[/yellow] Empty graph (run: mcp-skills index)"
+                )
                 all_healthy = False
         except Exception as e:
             console.print(f"  [red]✗[/red] Graph check failed: {e}")
@@ -589,11 +628,17 @@ def health() -> None:
             repos = repo_manager.list_repositories()
 
             if repos:
-                console.print(f"  [green]✓[/green] {len(repos)} repositories configured")
+                console.print(
+                    f"  [green]✓[/green] {len(repos)} repositories configured"
+                )
                 total_skills = sum(repo.skill_count for repo in repos)
-                console.print(f"  [green]✓[/green] {total_skills} total skills available")
+                console.print(
+                    f"  [green]✓[/green] {total_skills} total skills available"
+                )
             else:
-                console.print("  [yellow]⚠[/yellow] No repositories configured (run: mcp-skills setup)")
+                console.print(
+                    "  [yellow]⚠[/yellow] No repositories configured (run: mcp-skills setup)"
+                )
                 all_healthy = False
         except Exception as e:
             console.print(f"  [red]✗[/red] Repository check failed: {e}")
@@ -609,9 +654,13 @@ def health() -> None:
             if skills:
                 console.print(f"  [green]✓[/green] {len(skills)} skills discovered")
                 if stats.last_indexed != "never":
-                    console.print(f"  [green]✓[/green] Last indexed: {stats.last_indexed}")
+                    console.print(
+                        f"  [green]✓[/green] Last indexed: {stats.last_indexed}"
+                    )
                 else:
-                    console.print("  [yellow]⚠[/yellow] Never indexed (run: mcp-skills index)")
+                    console.print(
+                        "  [yellow]⚠[/yellow] Never indexed (run: mcp-skills index)"
+                    )
                     all_healthy = False
             else:
                 console.print("  [yellow]⚠[/yellow] No skills discovered")
@@ -659,7 +708,9 @@ def stats() -> None:
 
         # Index metrics
         table.add_row("Total Skills Indexed", str(index_stats.total_skills))
-        table.add_row("Vector Store Size", f"{index_stats.vector_store_size // 1024} KB")
+        table.add_row(
+            "Vector Store Size", f"{index_stats.vector_store_size // 1024} KB"
+        )
         table.add_row("Graph Nodes", str(index_stats.graph_nodes))
         table.add_row("Graph Edges", str(index_stats.graph_edges))
 
@@ -744,7 +795,9 @@ def repo_add(url: str, priority: int) -> None:
                 console.print(f"  • Path: {repo.local_path}")
 
                 # Suggest reindexing
-                console.print("\n[dim]Tip: Run 'mcp-skills index' to index new skills[/dim]")
+                console.print(
+                    "\n[dim]Tip: Run 'mcp-skills index' to index new skills[/dim]"
+                )
 
             except ValueError as e:
                 progress.stop()
@@ -795,7 +848,9 @@ def repo_list() -> None:
 
         # Summary
         total_skills = sum(repo.skill_count for repo in repos)
-        console.print(f"\n[dim]Total: {len(repos)} repositories, {total_skills} skills[/dim]")
+        console.print(
+            f"\n[dim]Total: {len(repos)} repositories, {total_skills} skills[/dim]"
+        )
 
     except Exception as e:
         console.print(f"[red]Failed to list repositories: {e}[/red]")
@@ -831,7 +886,9 @@ def repo_update(repo_id: str | None) -> None:
                     console.print("[green]✓[/green] Repository updated successfully")
                     console.print(f"  • ID: {repo.id}")
                     console.print(f"  • Skills: {repo.skill_count}")
-                    console.print(f"  • Last updated: {repo.last_updated.strftime('%Y-%m-%d %H:%M')}")
+                    console.print(
+                        f"  • Last updated: {repo.last_updated.strftime('%Y-%m-%d %H:%M')}"
+                    )
 
                 except ValueError as e:
                     progress.stop()
@@ -869,9 +926,13 @@ def repo_update(repo_id: str | None) -> None:
                         new_skills += skill_diff
 
                         if skill_diff > 0:
-                            console.print(f"  [green]✓[/green] {repo.id}: +{skill_diff} new skills")
+                            console.print(
+                                f"  [green]✓[/green] {repo.id}: +{skill_diff} new skills"
+                            )
                         elif skill_diff < 0:
-                            console.print(f"  [yellow]✓[/yellow] {repo.id}: {skill_diff} skills removed")
+                            console.print(
+                                f"  [yellow]✓[/yellow] {repo.id}: {skill_diff} skills removed"
+                            )
                         else:
                             console.print(f"  [green]✓[/green] {repo.id}: up to date")
 
@@ -895,7 +956,9 @@ def repo_update(repo_id: str | None) -> None:
                 console.print(f"  • New skills: {new_skills}")
 
             if updated_count > 0:
-                console.print("\n[dim]Tip: Run 'mcp-skills index' to reindex updated skills[/dim]")
+                console.print(
+                    "\n[dim]Tip: Run 'mcp-skills index' to reindex updated skills[/dim]"
+                )
 
     except Exception as e:
         console.print(f"[red]Update failed: {e}[/red]")
@@ -946,7 +1009,9 @@ def index(incremental: bool, force: bool) -> None:
                 table.add_column("Value", style="bold")
 
                 table.add_row("Skills Indexed", str(stats.total_skills))
-                table.add_row("Vector Store Size", f"{stats.vector_store_size // 1024} KB")
+                table.add_row(
+                    "Vector Store Size", f"{stats.vector_store_size // 1024} KB"
+                )
                 table.add_row("Graph Nodes", str(stats.graph_nodes))
                 table.add_row("Graph Edges", str(stats.graph_edges))
                 table.add_row("Last Indexed", stats.last_indexed)
@@ -956,7 +1021,9 @@ def index(incremental: bool, force: bool) -> None:
                 if stats.total_skills == 0:
                     console.print("\n[yellow]No skills were indexed[/yellow]")
                     console.print("\nPossible reasons:")
-                    console.print("  • No repositories configured (run: mcp-skills setup)")
+                    console.print(
+                        "  • No repositories configured (run: mcp-skills setup)"
+                    )
                     console.print("  • Repositories are empty")
                     console.print("  • No SKILL.md files found")
 
@@ -1014,7 +1081,9 @@ def config() -> None:
 
             if stats.total_skills > 0:
                 vector_node.add(f"[green]✓[/green] {stats.total_skills} skills indexed")
-                vector_node.add(f"[green]✓[/green] Size: {stats.vector_store_size // 1024} KB")
+                vector_node.add(
+                    f"[green]✓[/green] Size: {stats.vector_store_size // 1024} KB"
+                )
             else:
                 vector_node.add("[dim]Empty (run: mcp-skills index)[/dim]")
         except Exception as e:

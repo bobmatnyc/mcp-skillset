@@ -193,9 +193,7 @@ class TestSkillIDNormalization:
 
     def test_normalize_preserve_slashes(self, skill_manager: SkillManager) -> None:
         """Test slashes are preserved for path structure."""
-        assert (
-            skill_manager._normalize_skill_id("repo/path/skill") == "repo/path/skill"
-        )
+        assert skill_manager._normalize_skill_id("repo/path/skill") == "repo/path/skill"
 
     def test_normalize_consecutive_hyphens(self, skill_manager: SkillManager) -> None:
         """Test consecutive hyphens are collapsed."""
@@ -654,7 +652,9 @@ description: [unclosed array
         skill_dir.mkdir(parents=True)
 
         skill_file = skill_dir / "SKILL.md"
-        skill_file.write_text("# Just content\n\nNo frontmatter here.", encoding="utf-8")
+        skill_file.write_text(
+            "# Just content\n\nNo frontmatter here.", encoding="utf-8"
+        )
 
         skills = skill_manager.discover_skills()
 

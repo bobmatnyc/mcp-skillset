@@ -294,9 +294,7 @@ class HybridSearcher:
             skill = self.skill_manager.load_skill(skill_id)
             if skill:
                 combined_results.append(
-                    ScoredSkill(
-                        skill=skill, score=hybrid_score, match_type=match_type
-                    )
+                    ScoredSkill(skill=skill, score=hybrid_score, match_type=match_type)
                 )
 
         # Sort by score descending

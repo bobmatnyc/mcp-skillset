@@ -87,7 +87,8 @@ class MetadataStore:
             conn.execute("PRAGMA foreign_keys = ON")
 
             # Create repositories table
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS repositories (
                     id TEXT PRIMARY KEY,
                     url TEXT NOT NULL,
@@ -97,10 +98,12 @@ class MetadataStore:
                     skill_count INTEGER DEFAULT 0,
                     license TEXT
                 )
-            """)
+            """
+            )
 
             # Create skills table for future use
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS skills (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -113,10 +116,12 @@ class MetadataStore:
                     FOREIGN KEY (repository_id) REFERENCES repositories(id)
                         ON DELETE CASCADE
                 )
-            """)
+            """
+            )
 
             # Create skill tags table for many-to-many relationship
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS skill_tags (
                     skill_id TEXT,
                     tag TEXT,
@@ -124,10 +129,12 @@ class MetadataStore:
                         ON DELETE CASCADE,
                     PRIMARY KEY (skill_id, tag)
                 )
-            """)
+            """
+            )
 
             # Create skill dependencies table for skill relationships
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS skill_dependencies (
                     skill_id TEXT,
                     dependency_id TEXT,
@@ -135,28 +142,37 @@ class MetadataStore:
                         ON DELETE CASCADE,
                     PRIMARY KEY (skill_id, dependency_id)
                 )
-            """)
+            """
+            )
 
             # Create indexes for fast lookups
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_repos_priority
                 ON repositories(priority DESC)
-            """)
+            """
+            )
 
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_skills_category
                 ON skills(category)
-            """)
+            """
+            )
 
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_skills_repo
                 ON skills(repository_id)
-            """)
+            """
+            )
 
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_skill_tags_tag
                 ON skill_tags(tag)
-            """)
+            """
+            )
 
             conn.commit()
 
@@ -235,9 +251,7 @@ class MetadataStore:
         - No table scan required
         """
         with self._get_connection() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM repositories WHERE id = ?", (repo_id,)
-            )
+            cursor = conn.execute("SELECT * FROM repositories WHERE id = ?", (repo_id,))
             row = cursor.fetchone()
 
             if not row:
@@ -260,9 +274,7 @@ class MetadataStore:
         idx_repos_priority index for efficient sorting without full table scan.
         """
         with self._get_connection() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM repositories ORDER BY priority DESC"
-            )
+            cursor = conn.execute("SELECT * FROM repositories ORDER BY priority DESC")
             rows = cursor.fetchall()
 
             return [self._row_to_repository(row) for row in rows]

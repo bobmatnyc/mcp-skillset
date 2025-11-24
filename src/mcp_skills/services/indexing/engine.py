@@ -122,9 +122,7 @@ class IndexingEngine:
         self.vector_backend = vector_backend
         self.graph_backend = graph_backend
         self.skill_manager = skill_manager
-        self.storage_path = storage_path or (
-            Path.home() / ".mcp-skills" / "chromadb"
-        )
+        self.storage_path = storage_path or (Path.home() / ".mcp-skills" / "chromadb")
 
         # Ensure storage directory exists
         self.storage_path.mkdir(parents=True, exist_ok=True)
@@ -320,9 +318,7 @@ class IndexingEngine:
             top_k=top_k,
         )
 
-    def get_related_skills(
-        self, skill_id: str, max_depth: int = 2
-    ) -> list[Skill]:
+    def get_related_skills(self, skill_id: str, max_depth: int = 2) -> list[Skill]:
         """Find related skills via knowledge graph.
 
         Traverses graph to find skills connected via dependencies,
@@ -392,9 +388,7 @@ class IndexingEngine:
 
             # Last indexed timestamp
             last_indexed = (
-                self._last_indexed.isoformat()
-                if self._last_indexed
-                else "never"
+                self._last_indexed.isoformat() if self._last_indexed else "never"
             )
 
             return IndexStats(
@@ -475,9 +469,7 @@ class IndexingEngine:
             top_k=top_k,
         )
 
-    def _graph_search(
-        self, seed_skill_id: str, max_depth: int = 2
-    ) -> list[dict]:
+    def _graph_search(self, seed_skill_id: str, max_depth: int = 2) -> list[dict]:
         """Perform graph search (backward compatibility for tests)."""
         return self.hybrid_searcher._graph_search(seed_skill_id, max_depth)
 

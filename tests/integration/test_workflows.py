@@ -145,9 +145,7 @@ class TestSearchWorkflow:
         # 7. Verify filters work correctly
         # Should find flask skill
         assert len(flask_results) > 0
-        assert any(
-            result.skill.name == "flask-development" for result in flask_results
-        )
+        assert any(result.skill.name == "flask-development" for result in flask_results)
         # All results should have flask or web in tags
         for result in flask_results:
             assert any(
@@ -216,7 +214,9 @@ class TestRecommendationWorkflow:
 
         # 4. Get recommendations based on detected toolchain
         # Search for skills matching the detected toolchain
-        query = f"{toolchain_info.primary_language} {' '.join(toolchain_info.frameworks)}"
+        query = (
+            f"{toolchain_info.primary_language} {' '.join(toolchain_info.frameworks)}"
+        )
         results = indexing_engine.search(query=query, top_k=10)
 
         # 5. Verify relevant skills recommended

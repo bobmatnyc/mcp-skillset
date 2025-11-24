@@ -254,9 +254,7 @@ class TestMultiLanguageProjectAutoDetect:
 
         # TypeScript files
         (project_dir / "frontend").mkdir()
-        (project_dir / "frontend" / "index.ts").write_text(
-            "console.log('Hello');"
-        )
+        (project_dir / "frontend" / "index.ts").write_text("console.log('Hello');")
         (project_dir / "package.json").write_text(
             '{"dependencies": {"typescript": "^5.0.0"}}'
         )
@@ -297,9 +295,7 @@ class TestMultiLanguageProjectAutoDetect:
 
         # TypeScript frontend
         (project_dir / "frontend").mkdir()
-        (project_dir / "frontend" / "index.ts").write_text(
-            "console.log('Hello');"
-        )
+        (project_dir / "frontend" / "index.ts").write_text("console.log('Hello');")
         (project_dir / "package.json").write_text(
             '{"dependencies": {"typescript": "^5.0.0"}}'
         )

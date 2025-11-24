@@ -302,7 +302,9 @@ class VectorStore:
                     distance = results["distances"][0][i]
                     similarity = 1.0 / (1.0 + distance)
 
-                    metadata = results["metadatas"][0][i] if results["metadatas"] else {}
+                    metadata = (
+                        results["metadatas"][0][i] if results["metadatas"] else {}
+                    )
 
                     vector_results.append(
                         {

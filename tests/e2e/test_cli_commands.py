@@ -77,7 +77,10 @@ class TestCLISetupCommand:
         assert "Detecting project toolchain" in result.output
 
         # Verify setup completion message
-        assert "Setup complete" in result.output or "Setup completed with warnings" in result.output
+        assert (
+            "Setup complete" in result.output
+            or "Setup completed with warnings" in result.output
+        )
 
     def test_setup_detects_python_project(
         self,
@@ -123,9 +126,7 @@ class TestCLISearchCommand:
         from mcp_skills.cli import main
 
         monkeypatch.setattr(main, "SkillManager", lambda **kwargs: skill_manager)
-        monkeypatch.setattr(
-            main, "IndexingEngine", lambda **kwargs: indexing_engine
-        )
+        monkeypatch.setattr(main, "IndexingEngine", lambda **kwargs: indexing_engine)
 
         result = cli_runner.invoke(cli, ["search", "python testing", "--limit", "5"])
 
@@ -151,9 +152,7 @@ class TestCLISearchCommand:
         from mcp_skills.cli import main
 
         monkeypatch.setattr(main, "SkillManager", lambda **kwargs: skill_manager)
-        monkeypatch.setattr(
-            main, "IndexingEngine", lambda **kwargs: indexing_engine
-        )
+        monkeypatch.setattr(main, "IndexingEngine", lambda **kwargs: indexing_engine)
 
         result = cli_runner.invoke(
             cli, ["search", "python", "--category", "testing", "--limit", "3"]
@@ -178,9 +177,7 @@ class TestCLISearchCommand:
         from mcp_skills.cli import main
 
         monkeypatch.setattr(main, "SkillManager", lambda **kwargs: skill_manager)
-        monkeypatch.setattr(
-            main, "IndexingEngine", lambda **kwargs: indexing_engine
-        )
+        monkeypatch.setattr(main, "IndexingEngine", lambda **kwargs: indexing_engine)
 
         result = cli_runner.invoke(
             cli, ["search", "nonexistent_query_xyz123", "--limit", "5"]
@@ -319,12 +316,11 @@ class TestCLIRecommendCommand:
         from mcp_skills.cli import main
 
         monkeypatch.setattr(main, "SkillManager", lambda **kwargs: skill_manager)
-        monkeypatch.setattr(
-            main, "IndexingEngine", lambda **kwargs: indexing_engine
-        )
+        monkeypatch.setattr(main, "IndexingEngine", lambda **kwargs: indexing_engine)
 
         # Import ToolchainDetector directly to avoid recursion
         from mcp_skills.services.toolchain_detector import ToolchainDetector
+
         monkeypatch.setattr(main, "ToolchainDetector", lambda: ToolchainDetector())
 
         # Change to Python project directory
@@ -353,9 +349,7 @@ class TestCLIRepoCommands:
 
         from mcp_skills.cli import main
 
-        monkeypatch.setattr(
-            main, "RepositoryManager", lambda **kwargs: repo_manager
-        )
+        monkeypatch.setattr(main, "RepositoryManager", lambda **kwargs: repo_manager)
 
         result = cli_runner.invoke(cli, ["repo", "list"])
 
@@ -373,9 +367,7 @@ class TestCLIRepoCommands:
 
         from mcp_skills.cli import main
 
-        monkeypatch.setattr(
-            main, "RepositoryManager", lambda **kwargs: repo_manager
-        )
+        monkeypatch.setattr(main, "RepositoryManager", lambda **kwargs: repo_manager)
 
         result = cli_runner.invoke(cli, ["repo", "list"])
 
@@ -394,9 +386,7 @@ class TestCLIRepoCommands:
 
         from mcp_skills.cli import main
 
-        monkeypatch.setattr(
-            main, "RepositoryManager", lambda **kwargs: repo_manager
-        )
+        monkeypatch.setattr(main, "RepositoryManager", lambda **kwargs: repo_manager)
 
         result = cli_runner.invoke(cli, ["repo", "add", "not-a-valid-url"])
 
@@ -420,14 +410,14 @@ class TestCLIIndexCommand:
         from mcp_skills.cli import main
 
         monkeypatch.setattr(main, "SkillManager", lambda **kwargs: skill_manager)
-        monkeypatch.setattr(
-            main, "IndexingEngine", lambda **kwargs: indexing_engine
-        )
+        monkeypatch.setattr(main, "IndexingEngine", lambda **kwargs: indexing_engine)
 
         result = cli_runner.invoke(cli, ["index"])
 
         assert result.exit_code == 0
-        assert "Indexing skills" in result.output or "Indexing complete" in result.output
+        assert (
+            "Indexing skills" in result.output or "Indexing complete" in result.output
+        )
 
     def test_index_force_rebuild(
         self,
@@ -441,9 +431,7 @@ class TestCLIIndexCommand:
         from mcp_skills.cli import main
 
         monkeypatch.setattr(main, "SkillManager", lambda **kwargs: skill_manager)
-        monkeypatch.setattr(
-            main, "IndexingEngine", lambda **kwargs: indexing_engine
-        )
+        monkeypatch.setattr(main, "IndexingEngine", lambda **kwargs: indexing_engine)
 
         result = cli_runner.invoke(cli, ["index", "--force"])
 
@@ -467,12 +455,8 @@ class TestCLIHealthCommand:
         from mcp_skills.cli import main
 
         monkeypatch.setattr(main, "SkillManager", lambda **kwargs: skill_manager)
-        monkeypatch.setattr(
-            main, "IndexingEngine", lambda **kwargs: indexing_engine
-        )
-        monkeypatch.setattr(
-            main, "RepositoryManager", lambda **kwargs: repo_manager
-        )
+        monkeypatch.setattr(main, "IndexingEngine", lambda **kwargs: indexing_engine)
+        monkeypatch.setattr(main, "RepositoryManager", lambda **kwargs: repo_manager)
 
         result = cli_runner.invoke(cli, ["health"])
 
@@ -499,12 +483,8 @@ class TestCLIStatsCommand:
         from mcp_skills.cli import main
 
         monkeypatch.setattr(main, "SkillManager", lambda **kwargs: skill_manager)
-        monkeypatch.setattr(
-            main, "IndexingEngine", lambda **kwargs: indexing_engine
-        )
-        monkeypatch.setattr(
-            main, "RepositoryManager", lambda **kwargs: repo_manager
-        )
+        monkeypatch.setattr(main, "IndexingEngine", lambda **kwargs: indexing_engine)
+        monkeypatch.setattr(main, "RepositoryManager", lambda **kwargs: repo_manager)
 
         result = cli_runner.invoke(cli, ["stats"])
 
@@ -529,18 +509,17 @@ class TestCLIConfigCommand:
         from mcp_skills.cli import main
 
         monkeypatch.setattr(main, "SkillManager", lambda **kwargs: skill_manager)
-        monkeypatch.setattr(
-            main, "IndexingEngine", lambda **kwargs: indexing_engine
-        )
-        monkeypatch.setattr(
-            main, "RepositoryManager", lambda **kwargs: repo_manager
-        )
+        monkeypatch.setattr(main, "IndexingEngine", lambda **kwargs: indexing_engine)
+        monkeypatch.setattr(main, "RepositoryManager", lambda **kwargs: repo_manager)
 
         result = cli_runner.invoke(cli, ["config"])
 
         assert result.exit_code == 0
         assert "Current Configuration" in result.output
-        assert "Base Directory" in result.output or "mcp-skills Configuration" in result.output
+        assert (
+            "Base Directory" in result.output
+            or "mcp-skills Configuration" in result.output
+        )
 
 
 @pytest.mark.e2e

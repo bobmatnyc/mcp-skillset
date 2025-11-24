@@ -378,8 +378,8 @@ class TestFrameworkDetection:
     @pytest.mark.parametrize(
         "framework,dependency",
         [
-            ("Rocket", "rocket = \"0.5\""),
-            ("Warp", "warp = \"0.3\""),
+            ("Rocket", 'rocket = "0.5"'),
+            ("Warp", 'warp = "0.3"'),
         ],
     )
     def test_detect_rust_framework_variations(
@@ -790,9 +790,7 @@ class TestTestFrameworkDetection:
 
         assert "go test" in info.test_frameworks
 
-    def test_detect_unittest(
-        self, detector: ToolchainDetector, tmp_path: Path
-    ) -> None:
+    def test_detect_unittest(self, detector: ToolchainDetector, tmp_path: Path) -> None:
         """Test detection of unittest test framework."""
         project_dir = tmp_path / "unittest_project"
         project_dir.mkdir()
@@ -1117,9 +1115,7 @@ class TestSkillRecommendations:
         assert "go-development" in skills
         assert "go-testing" in skills
 
-    def test_recommend_skills_no_duplicates(
-        self, detector: ToolchainDetector
-    ) -> None:
+    def test_recommend_skills_no_duplicates(self, detector: ToolchainDetector) -> None:
         """Test that skill recommendations don't contain duplicates."""
         toolchain = ToolchainInfo(
             primary_language="Python",

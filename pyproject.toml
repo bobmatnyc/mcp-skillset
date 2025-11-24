@@ -97,6 +97,16 @@ where = ["src"]
 [tool.setuptools.package-data]
 mcp_skills = ["py.typed", "VERSION"]
 
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.data-files]
+"share/mcp-skills/completions" = [
+    "completions/mcp-skills-completion.bash",
+    "completions/mcp-skills-completion.zsh",
+    "completions/mcp-skills-completion.fish",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]

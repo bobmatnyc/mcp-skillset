@@ -9,6 +9,9 @@ recursive-include src/mcp_skills *.py
 include src/mcp_skills/py.typed
 include src/mcp_skills/VERSION
 
+# Include shell completions
+recursive-include completions *.bash *.zsh *.fish
+
 # Include configuration examples
 include .mcp-skills.yaml.example
 

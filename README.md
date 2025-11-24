@@ -168,6 +168,16 @@ mcp-skills uses a hybrid RAG approach combining:
 ### Global Configuration (`~/.mcp-skills/config.yaml`)
 
 ```yaml
+# Hybrid Search Configuration
+# Controls weighting between vector similarity and knowledge graph relationships
+hybrid_search:
+  # Option 1: Use a preset (recommended)
+  preset: current  # current, semantic_focused, graph_focused, or balanced
+
+  # Option 2: Specify custom weights (must sum to 1.0)
+  # vector_weight: 0.7  # Weight for vector similarity (0.0-1.0)
+  # graph_weight: 0.3   # Weight for knowledge graph (0.0-1.0)
+
 repositories:
   - url: https://github.com/anthropics/skills.git
     priority: 100
@@ -180,6 +190,53 @@ vector_store:
 server:
   transport: stdio
   log_level: info
+```
+
+#### Hybrid Search Modes
+
+The hybrid search system combines vector similarity (semantic search) with knowledge graph relationships (dependency traversal) to find relevant skills. You can tune the weighting to optimize for different use cases:
+
+**Available Presets:**
+
+| Preset | Vector | Graph | Best For | Use Case |
+|--------|--------|-------|----------|----------|
+| `current` | 70% | 30% | **General purpose** (default) | Balanced skill discovery with slight semantic emphasis |
+| `semantic_focused` | 90% | 10% | Natural language queries | "help me debug async code" → emphasizes semantic understanding |
+| `graph_focused` | 30% | 70% | Related skill discovery | Starting from "pytest" → discovers pytest-fixtures, pytest-mock |
+| `balanced` | 50% | 50% | Equal weighting | General purpose when unsure which approach is better |
+
+**When to use each mode:**
+
+- **`current`** (default): Best for most users. Proven through testing to work well for typical skill discovery patterns.
+- **`semantic_focused`**: Use when you have vague requirements or want fuzzy semantic matching. Good for concept-based searches like "help me with error handling" or "testing strategies".
+- **`graph_focused`**: Use when you want to explore skill ecosystems and dependencies. Perfect for "what else works with X?" queries.
+- **`balanced`**: Use when you want equal emphasis on both approaches, or as a starting point for experimentation.
+
+**Configuration Examples:**
+
+```yaml
+# Use preset (recommended)
+hybrid_search:
+  preset: current
+
+# OR specify custom weights
+hybrid_search:
+  vector_weight: 0.8
+  graph_weight: 0.2
+```
+
+**CLI Override:**
+
+You can override the config file setting using the `--search-mode` flag:
+
+```bash
+# Use semantic-focused mode for this search
+mcp-skills search "python testing" --search-mode semantic_focused
+
+# Use graph-focused mode for recommendations
+mcp-skills recommend --search-mode graph_focused
+
+# Available modes: semantic_focused, graph_focused, balanced, current
 ```
 
 ### Project Configuration (`.mcp-skills.yaml`)

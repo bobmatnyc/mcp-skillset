@@ -29,6 +29,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+from mcp_skills.models.config import MCPSkillsConfig
 from mcp_skills.models.skill import Skill
 from mcp_skills.services.indexing.graph_store import GraphStore
 from mcp_skills.services.indexing.hybrid_search import HybridSearcher, ScoredSkill
@@ -107,14 +108,16 @@ class IndexingEngine:
         graph_backend: str = "networkx",
         skill_manager: Optional["SkillManager"] = None,
         storage_path: Path | None = None,
+        config: MCPSkillsConfig | None = None,
     ) -> None:
-        """Initialize indexing engine.
+        """Initialize indexing engine with optional configuration.
 
         Args:
             vector_backend: Vector store backend (chromadb, qdrant, faiss)
             graph_backend: Knowledge graph backend (networkx, neo4j)
             skill_manager: SkillManager instance for skill loading
             storage_path: Path to store ChromaDB data (defaults to ~/.mcp-skills/chromadb/)
+            config: Optional MCPSkillsConfig for hybrid search weights and other settings
 
         Raises:
             RuntimeError: If ChromaDB or component initialization fails
@@ -123,6 +126,7 @@ class IndexingEngine:
         self.graph_backend = graph_backend
         self.skill_manager = skill_manager
         self.storage_path = storage_path or (Path.home() / ".mcp-skills" / "chromadb")
+        self.config = config
 
         # Ensure storage directory exists
         self.storage_path.mkdir(parents=True, exist_ok=True)
@@ -131,12 +135,29 @@ class IndexingEngine:
         try:
             self.vector_store = VectorStore(persist_directory=self.storage_path)
             self.graph_store = GraphStore()
-            self.hybrid_searcher = HybridSearcher(
-                vector_store=self.vector_store,
-                graph_store=self.graph_store,
-                skill_manager=skill_manager,
-            )
-            logger.info("IndexingEngine initialized successfully")
+
+            # Initialize HybridSearcher with weights from config if available
+            if config:
+                self.hybrid_searcher = HybridSearcher(
+                    vector_store=self.vector_store,
+                    graph_store=self.graph_store,
+                    skill_manager=skill_manager,
+                    vector_weight=config.hybrid_search.vector_weight,
+                    graph_weight=config.hybrid_search.graph_weight,
+                )
+                logger.info(
+                    f"IndexingEngine initialized with hybrid search weights: "
+                    f"vector={config.hybrid_search.vector_weight:.2f}, "
+                    f"graph={config.hybrid_search.graph_weight:.2f}"
+                )
+            else:
+                # No config - use defaults
+                self.hybrid_searcher = HybridSearcher(
+                    vector_store=self.vector_store,
+                    graph_store=self.graph_store,
+                    skill_manager=skill_manager,
+                )
+                logger.info("IndexingEngine initialized with default hybrid search weights")
 
         except Exception as e:
             logger.error(f"Failed to initialize IndexingEngine: {e}")

@@ -11,6 +11,7 @@ from rich.table import Table
 from rich.tree import Tree
 
 from mcp_skills import __version__
+from mcp_skills.models.config import MCPSkillsConfig
 from mcp_skills.services.indexing import IndexingEngine
 from mcp_skills.services.repository_manager import RepositoryManager
 from mcp_skills.services.skill_manager import SkillManager
@@ -269,21 +270,51 @@ def mcp(dev: bool) -> None:
 @click.argument("query")
 @click.option("--limit", type=int, default=10, help="Maximum results")
 @click.option("--category", type=str, help="Filter by category")
-def search(query: str, limit: int, category: str | None) -> None:
+@click.option(
+    "--search-mode",
+    type=click.Choice(
+        ["semantic_focused", "graph_focused", "balanced", "current"], case_sensitive=False
+    ),
+    help="Hybrid search weighting preset (overrides config file)",
+)
+def search(
+    query: str, limit: int, category: str | None, search_mode: str | None
+) -> None:
     """Search for skills using natural language query.
 
     Example: mcp-skills search "testing skills for Python"
+
+    Search Modes:
+      - semantic_focused: Optimize for semantic similarity (90% vector, 10% graph)
+      - graph_focused: Optimize for relationships (30% vector, 70% graph)
+      - balanced: Equal weighting (50% vector, 50% graph)
+      - current: Default optimized preset (70% vector, 30% graph)
+
+    If --search-mode is not specified, loads from config.yaml or uses default.
     """
     console.print(f"🔍 [bold]Searching for:[/bold] {query}")
     if category:
-        console.print(f"📁 [dim]Category filter: {category}[/dim]\n")
-    else:
-        console.print()
+        console.print(f"📁 [dim]Category filter: {category}[/dim]")
+    if search_mode:
+        console.print(f"⚖️  [dim]Search mode: {search_mode}[/dim]")
+    console.print()
 
     try:
-        # Initialize services
+        # Initialize services with config
         skill_manager = SkillManager()
-        indexing_engine = IndexingEngine(skill_manager=skill_manager)
+
+        # Load config and optionally override with CLI flag
+        config = MCPSkillsConfig()
+        if search_mode:
+            # Override config with CLI flag
+            config.hybrid_search = config._get_preset(search_mode)
+            console.print(
+                f"[dim]Using {search_mode} preset: "
+                f"vector={config.hybrid_search.vector_weight:.1f}, "
+                f"graph={config.hybrid_search.graph_weight:.1f}[/dim]\n"
+            )
+
+        indexing_engine = IndexingEngine(skill_manager=skill_manager, config=config)
 
         # Perform search
         results = indexing_engine.search(query, category=category, top_k=limit)
@@ -499,9 +530,28 @@ def info(skill_id: str) -> None:
 
 
 @cli.command()
-def recommend() -> None:
-    """Get skill recommendations for current project."""
-    console.print("💡 [bold]Skill Recommendations[/bold]\n")
+@click.option(
+    "--search-mode",
+    type=click.Choice(
+        ["semantic_focused", "graph_focused", "balanced", "current"], case_sensitive=False
+    ),
+    help="Hybrid search weighting preset (overrides config file)",
+)
+def recommend(search_mode: str | None) -> None:
+    """Get skill recommendations for current project.
+
+    Search Modes:
+      - semantic_focused: Optimize for semantic similarity (90% vector, 10% graph)
+      - graph_focused: Optimize for relationships (30% vector, 70% graph)
+      - balanced: Equal weighting (50% vector, 50% graph)
+      - current: Default optimized preset (70% vector, 30% graph)
+
+    If --search-mode is not specified, loads from config.yaml or uses default.
+    """
+    console.print("💡 [bold]Skill Recommendations[/bold]")
+    if search_mode:
+        console.print(f"⚖️  [dim]Search mode: {search_mode}[/dim]")
+    console.print()
 
     try:
         # Detect current directory toolchain
@@ -518,9 +568,21 @@ def recommend() -> None:
             console.print(f"  • Testing: {', '.join(toolchain.test_frameworks)}")
         console.print(f"  • Confidence: {toolchain.confidence:.0%}\n")
 
-        # Get recommendations
+        # Get recommendations with config
         skill_manager = SkillManager()
-        indexing_engine = IndexingEngine(skill_manager=skill_manager)
+
+        # Load config and optionally override with CLI flag
+        config = MCPSkillsConfig()
+        if search_mode:
+            # Override config with CLI flag
+            config.hybrid_search = config._get_preset(search_mode)
+            console.print(
+                f"[dim]Using {search_mode} preset: "
+                f"vector={config.hybrid_search.vector_weight:.1f}, "
+                f"graph={config.hybrid_search.graph_weight:.1f}[/dim]\n"
+            )
+
+        indexing_engine = IndexingEngine(skill_manager=skill_manager, config=config)
 
         # Build query from toolchain
         query_parts = [toolchain.primary_language]

@@ -1,0 +1,85 @@
+# MCP Skills Configuration Example
+# Copy this file to ~/.mcp-skills/config.yaml and customize as needed
+
+# Hybrid Search Configuration
+# Controls the weighting between vector similarity search and knowledge graph relationships
+hybrid_search:
+  # Option 1: Use a preset (recommended)
+  # Available presets:
+  #   - current: Default optimized preset (70% vector, 30% graph)
+  #   - semantic_focused: Best for natural language queries (90% vector, 10% graph)
+  #   - graph_focused: Best for finding related skills (30% vector, 70% graph)
+  #   - balanced: Equal weighting for general purpose (50% vector, 50% graph)
+  preset: current
+
+  # Option 2: Specify custom weights (must sum to 1.0)
+  # Uncomment and adjust these lines to use custom weights instead of a preset
+  # vector_weight: 0.7  # Weight for vector similarity search (0.0-1.0)
+  # graph_weight: 0.3   # Weight for knowledge graph relationships (0.0-1.0)
+
+# Vector Store Configuration
+vector_store:
+  backend: chromadb  # chromadb, qdrant, or faiss
+  embedding_model: all-MiniLM-L6-v2  # Sentence transformer model
+  collection_name: skills_v1  # ChromaDB collection name
+
+# Knowledge Graph Configuration
+knowledge_graph:
+  backend: networkx  # networkx or neo4j
+
+# MCP Server Configuration
+server:
+  transport: stdio  # stdio, http, or sse
+  port: 8000  # Port for HTTP transport
+  log_level: info  # debug, info, warning, or error
+  max_loaded_skills: 50  # Maximum skills to keep in memory
+
+# Toolchain Detection
+toolchain_cache_duration: 3600  # Cache duration in seconds
+auto_recommend: true  # Automatically recommend skills on toolchain detection
+
+# Repository Configuration (optional)
+# repositories:
+#   - url: https://github.com/anthropics/mcp-skills-core
+#     priority: 90
+#     auto_update: true
+#   - url: https://github.com/your-org/custom-skills
+#     priority: 80
+#     auto_update: true
+
+# Use Cases by Preset:
+#
+# current (0.7 vector, 0.3 graph) - DEFAULT
+#   Best for: General-purpose skill discovery
+#   Use when: You want balanced results with slight emphasis on semantic matching
+#   Example: "python testing frameworks" → finds pytest, unittest with related testing skills
+#
+# semantic_focused (0.9 vector, 0.1 graph)
+#   Best for: Natural language queries, fuzzy matching, concept-based search
+#   Use when: You have vague requirements or want semantic similarity
+#   Example: "help me debug async code" → emphasizes semantic understanding over relationships
+#
+# graph_focused (0.3 vector, 0.7 graph)
+#   Best for: Discovering related skills, exploring dependencies, finding skill clusters
+#   Use when: You want to explore what skills work together or depend on each other
+#   Example: Starting from "pytest" → discovers pytest-fixtures, pytest-mock, test-coverage
+#
+# balanced (0.5 vector, 0.5 graph)
+#   Best for: General purpose when you want equal emphasis
+#   Use when: You're unsure which approach is better for your query
+#   Example: "javascript testing" → equal weight to semantic match and relationships
+
+# CLI Usage Examples:
+#
+# Use config file preset:
+#   mcp-skills search "python testing"
+#
+# Override with CLI flag:
+#   mcp-skills search "python testing" --search-mode semantic_focused
+#   mcp-skills recommend --search-mode graph_focused
+#
+# Available CLI flags:
+#   --search-mode semantic_focused  # 90% vector, 10% graph
+#   --search-mode graph_focused     # 30% vector, 70% graph
+#   --search-mode balanced          # 50% vector, 50% graph
+#   --search-mode current           # 70% vector, 30% graph (default)

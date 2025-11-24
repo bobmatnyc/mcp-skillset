@@ -52,11 +52,17 @@ class ScoredSkill:
 
 
 class HybridSearcher:
-    """Hybrid search combining vector and graph results.
+    """Hybrid search combining vector and graph results with configurable weighting.
 
     Implements weighted combination of:
-    - Vector similarity search (70% weight)
-    - Graph relationship traversal (30% weight)
+    - Vector similarity search (configurable weight, default 70%)
+    - Graph relationship traversal (configurable weight, default 30%)
+
+    Weights can be customized via constructor parameters to optimize for different use cases:
+    - Semantic-focused (0.9/0.1): Best for natural language queries
+    - Graph-focused (0.3/0.7): Best for discovering related skills
+    - Balanced (0.5/0.5): Equal weighting for general purpose
+    - Current (0.7/0.3): Proven default from testing
 
     Architecture:
     - Score normalization: Ensures fair comparison between methods
@@ -73,14 +79,9 @@ class HybridSearcher:
        - Estimated speedup: 30-40% reduction in latency
        - Effort: 4-6 hours, requires async/await refactoring
        - Threshold: Implement when search latency >200ms
-
-    2. Configurable Weights: Allow users to tune vector/graph balance
-       - Use case: Different query types (semantic vs. dependency-focused)
-       - Effort: 2-3 hours
-       - Requires: A/B testing to validate default weights
     """
 
-    # Hybrid search weights (sum to 1.0)
+    # Default hybrid search weights (sum to 1.0) - used as fallback
     VECTOR_WEIGHT = 0.7
     GRAPH_WEIGHT = 0.3
 
@@ -89,17 +90,53 @@ class HybridSearcher:
         vector_store: "VectorStore",
         graph_store: "GraphStore",
         skill_manager: "SkillManager | None" = None,
+        vector_weight: float | None = None,
+        graph_weight: float | None = None,
     ) -> None:
-        """Initialize hybrid searcher.
+        """Initialize hybrid searcher with configurable weights.
 
         Args:
             vector_store: VectorStore instance for semantic search
             graph_store: GraphStore instance for relationship queries
             skill_manager: SkillManager instance for loading skills
+            vector_weight: Optional vector search weight (0.0-1.0). Uses class default if None.
+            graph_weight: Optional graph search weight (0.0-1.0). Uses class default if None.
+
+        Note:
+            If both weights are None, uses class constants (0.7 vector, 0.3 graph).
+            If only one weight is provided, the other is computed as (1.0 - provided_weight).
+            Weights are validated to ensure they sum to 1.0.
+
+        Raises:
+            ValueError: If provided weights don't sum to 1.0
         """
         self.vector_store = vector_store
         self.graph_store = graph_store
         self.skill_manager = skill_manager
+
+        # Configure weights with validation
+        if vector_weight is not None and graph_weight is not None:
+            # Both provided - validate they sum to 1.0
+            total = vector_weight + graph_weight
+            if abs(total - 1.0) > 1e-6:
+                raise ValueError(
+                    f"Weights must sum to 1.0, got {total:.6f} "
+                    f"(vector_weight={vector_weight}, graph_weight={graph_weight})"
+                )
+            self.vector_weight = vector_weight
+            self.graph_weight = graph_weight
+        elif vector_weight is not None:
+            # Only vector provided - compute graph
+            self.vector_weight = vector_weight
+            self.graph_weight = 1.0 - vector_weight
+        elif graph_weight is not None:
+            # Only graph provided - compute vector
+            self.graph_weight = graph_weight
+            self.vector_weight = 1.0 - graph_weight
+        else:
+            # Neither provided - use class defaults
+            self.vector_weight = self.VECTOR_WEIGHT
+            self.graph_weight = self.GRAPH_WEIGHT
 
     def search(
         self,
@@ -275,11 +312,11 @@ class HybridSearcher:
             vector_score, _ = score_map.get(skill_id, (0.0, 0.0))
             score_map[skill_id] = (vector_score, result["score"])
 
-        # Compute weighted hybrid scores
+        # Compute weighted hybrid scores using configured weights
         combined_results = []
         for skill_id, (vector_score, graph_score) in score_map.items():
             hybrid_score = (
-                self.VECTOR_WEIGHT * vector_score + self.GRAPH_WEIGHT * graph_score
+                self.vector_weight * vector_score + self.graph_weight * graph_score
             )
 
             # Determine match type

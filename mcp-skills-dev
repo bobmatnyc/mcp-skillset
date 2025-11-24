@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Local development runner for mcp-skills
+# Run the package from source without installation
+
+set -e  # Exit on error
+
+# Get script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Set PYTHONPATH to include src/
+export PYTHONPATH="${SCRIPT_DIR}/src:${PYTHONPATH}"
+
+# Use local venv if available, otherwise system Python
+if [ -d "${SCRIPT_DIR}/.venv" ]; then
+    source "${SCRIPT_DIR}/.venv/bin/activate"
+fi
+
+# Run the CLI from source
+python -m mcp_skills.cli.main "$@"

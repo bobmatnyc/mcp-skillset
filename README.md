@@ -1,7 +1,7 @@
 # mcp-skills
 
-[![PyPI version](https://badge.fury.io/py/mcp-skills.svg)](https://badge.fury.io/py/mcp-skills)
-[![Python Versions](https://img.shields.io/pypi/pyversions/mcp-skills)](https://pypi.org/project/mcp-skills/)
+[![PyPI version](https://badge.fury.io/py/mcp-skillkit.svg)](https://badge.fury.io/py/mcp-skillkit)
+[![Python Versions](https://img.shields.io/pypi/pyversions/mcp-skillkit)](https://pypi.org/project/mcp-skillkit/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Test Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)](https://github.com/bobmatnyc/mcp-skills)
 
@@ -23,7 +23,7 @@ mcp-skills is a standalone Python application that provides intelligent, context
 ### From PyPI
 
 ```bash
-pip install mcp-skills
+pip install mcp-skillkit
 ```
 
 ### From Source
@@ -33,6 +33,31 @@ git clone https://github.com/bobmatnyc/mcp-skills.git
 cd mcp-skills
 pip install -e .
 ```
+
+### Local Development (Without Installation)
+
+For development, you can run mcp-skills directly from source without installing:
+
+```bash
+# Use the development script
+./mcp-skills-dev --help
+./mcp-skills-dev search "python testing"
+./mcp-skills-dev setup --auto
+```
+
+The `mcp-skills-dev` script:
+- Runs the package from source code (not installed version)
+- Uses local virtual environment if available
+- Sets up PYTHONPATH automatically
+- Passes all arguments through to the CLI
+
+This is useful for:
+- Testing changes without reinstalling
+- Developing new features
+- Debugging with source code
+- Contributing to the project
+
+**Note**: For production use, install the package normally with `pip install -e .` or `pip install mcp-skillkit`.
 
 ### First-Run Requirements
 
@@ -207,6 +232,40 @@ cd mcp-skills
 pip install -e ".[dev]"
 ```
 
+### Running from Source (Development Mode)
+
+Use the `./mcp-skills-dev` script to run commands directly from source without installation:
+
+```bash
+# Run any CLI command
+./mcp-skills-dev --version
+./mcp-skills-dev search "debugging"
+./mcp-skills-dev serve --dev
+
+# All arguments pass through
+./mcp-skills-dev info systematic-debugging
+```
+
+**How it works**:
+1. Sets `PYTHONPATH` to include `src/` directory
+2. Activates local `.venv` if present
+3. Runs `python -m mcp_skills.cli.main` with all arguments
+
+**When to use**:
+- ✅ Rapid iteration during development
+- ✅ Testing changes without reinstalling
+- ✅ Debugging with source code modifications
+- ❌ Production deployments (use `pip install` instead)
+
+**Installed vs. Source**:
+```bash
+# Installed version (from pip install -e .)
+mcp-skills search "testing"
+
+# Source version (no installation required)
+./mcp-skills-dev search "testing"
+```
+
 ### Run Tests
 
 ```bash
@@ -335,7 +394,7 @@ For environments without internet access:
 
 3. Install mcp-skills (transfer wheel if needed):
    ```bash
-   pip install mcp-skills  # Or install from wheel
+   pip install mcp-skillkit  # Or install from wheel
    ```
 
 4. Verify the setup:
@@ -425,7 +484,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Links
 
-- **PyPI Package**: [mcp-skills on PyPI](https://pypi.org/project/mcp-skills/)
+- **PyPI Package**: [mcp-skillkit on PyPI](https://pypi.org/project/mcp-skillkit/)
 - **Documentation**: [GitHub Wiki](https://github.com/bobmatnyc/mcp-skills/wiki)
 - **Issue Tracker**: [GitHub Issues](https://github.com/bobmatnyc/mcp-skills/issues)
 - **MCP Registry**: [MCP Servers](https://registry.modelcontextprotocol.io)

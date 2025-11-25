@@ -19,7 +19,7 @@ class VectorStoreConfig(BaseSettings):
         backend: Vector store backend (chromadb, qdrant, faiss)
         embedding_model: Sentence transformer model name
         collection_name: Vector collection name
-        persist_directory: Directory for persistent storage
+        persist_directory: Directory for persistent storage (defaults to ~/.mcp-skillkit/indices/vector_store)
     """
 
     backend: Literal["chromadb", "qdrant", "faiss"] = Field(
@@ -29,7 +29,10 @@ class VectorStoreConfig(BaseSettings):
         "all-MiniLM-L6-v2", description="Sentence transformer model"
     )
     collection_name: str = Field("skills_v1", description="Collection name")
-    persist_directory: Path | None = Field(None, description="Persistence directory")
+    persist_directory: Path | None = Field(
+        None,
+        description="Persistence directory (defaults to ~/.mcp-skillkit/indices/vector_store)",
+    )
 
 
 class HybridSearchConfig(BaseSettings):
@@ -149,13 +152,16 @@ class KnowledgeGraphConfig(BaseSettings):
 
     Attributes:
         backend: Graph backend (networkx, neo4j)
-        persist_path: Path for graph persistence
+        persist_path: Path for graph persistence (defaults to ~/.mcp-skillkit/indices/knowledge_graph.pkl)
     """
 
     backend: Literal["networkx", "neo4j"] = Field(
         "networkx", description="Knowledge graph backend"
     )
-    persist_path: Path | None = Field(None, description="Graph persistence path")
+    persist_path: Path | None = Field(
+        None,
+        description="Graph persistence path (defaults to ~/.mcp-skillkit/indices/knowledge_graph.pkl)",
+    )
 
 
 class ServerConfig(BaseSettings):

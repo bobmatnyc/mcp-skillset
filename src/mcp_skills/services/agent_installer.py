@@ -115,6 +115,14 @@ class AgentInstaller:
         "env": {},
     }
 
+    GITIGNORE_ENTRIES = [
+        "",
+        "# MCP SkillKit datasets (added by mcp-skillkit installer)",
+        "# User-specific data files that should never be committed",
+        ".mcp-skillkit/",
+        "**/.mcp-skillkit/",
+    ]
+
     def __init__(self) -> None:
         """Initialize the agent installer."""
         pass
@@ -242,6 +250,9 @@ class AgentInstaller:
                     error=f"Failed to write config: {error}\n"
                     f"Configuration has been restored from backup.",
                 )
+
+            # Update .gitignore if found (best effort, don't fail installation)
+            self._update_gitignore_if_exists(agent.config_path.parent)
 
             # Success
             changes = self._describe_changes(config)
@@ -434,3 +445,68 @@ class AgentInstaller:
             return "Add mcp-skillkit to existing mcpServers configuration"
         else:
             return "Add mcpServers section with mcp-skillkit configuration"
+
+    def _update_gitignore_if_exists(self, search_dir: Path) -> None:
+        """Update .gitignore to exclude .mcp-skillkit/ if file exists.
+
+        Searches for .gitignore in the given directory and parent directories
+        up to the user's home directory. Adds MCP SkillKit entries if not present.
+
+        Args:
+            search_dir: Directory to start searching from
+
+        Note:
+            This is best-effort only - failures are silently ignored to not
+            disrupt the main installation process.
+        """
+        try:
+            # Search for .gitignore up to home directory
+            current_dir = search_dir.resolve()
+            home_dir = Path.home()
+
+            while current_dir >= home_dir:
+                gitignore_path = current_dir / ".gitignore"
+                if gitignore_path.exists():
+                    self._add_to_gitignore(gitignore_path)
+                    return
+
+                # Move up one directory
+                if current_dir.parent == current_dir:
+                    # Reached root without finding .gitignore
+                    break
+                current_dir = current_dir.parent
+
+        except Exception:
+            # Silently ignore errors - .gitignore update is nice-to-have
+            pass
+
+    def _add_to_gitignore(self, gitignore_path: Path) -> None:
+        """Add MCP SkillKit entries to .gitignore if not already present.
+
+        Args:
+            gitignore_path: Path to .gitignore file
+        """
+        try:
+            # Read existing content
+            content = gitignore_path.read_text(encoding="utf-8")
+
+            # Check if already has our entries
+            if ".mcp-skillkit/" in content:
+                return  # Already present
+
+            # Add our entries
+            entries_text = "\n".join(self.GITIGNORE_ENTRIES)
+
+            # Ensure file ends with newline before appending
+            if content and not content.endswith("\n"):
+                content += "\n"
+
+            # Append our entries
+            updated_content = content + entries_text + "\n"
+
+            # Write back
+            gitignore_path.write_text(updated_content, encoding="utf-8")
+
+        except Exception:
+            # Silently ignore errors
+            pass

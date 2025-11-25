@@ -65,8 +65,12 @@ dmypy.json
 *.log
 
 # MCP SkillKit specific
-~/.mcp-skillkit/
 .mcp-skillkit.yaml
+
+# MCP SkillKit datasets (ChromaDB, vector stores in ~/.mcp-skillkit/)
+# Note: These are user-specific data files that should never be committed
+.mcp-skillkit/
+**/.mcp-skillkit/
 
 # Added by Claude MPM /mpm-init
 $RECYCLE.BIN/

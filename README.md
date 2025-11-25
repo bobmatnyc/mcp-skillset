@@ -388,6 +388,11 @@ mcp-skillset provides a rich, interactive CLI with comprehensive command-line op
 | `repo add` | Add skill repository | `--priority` |
 | `repo list` | List repositories | - |
 | `repo update` | Update repositories | (optional repo-id) |
+| `discover search` | Search GitHub for repos | `--min-stars`, `--limit` |
+| `discover trending` | Get trending repos | `--timeframe`, `--topic` |
+| `discover topic` | Search by GitHub topic | `--min-stars` |
+| `discover verify` | Verify SKILL.md files | (repo-url argument) |
+| `discover limits` | Show API rate limits | - |
 | `doctor` | Health check | - |
 | `stats` | Usage statistics | - |
 | `enrich` | Enrich prompts | `--max-skills`, `--full`, `--output` |
@@ -695,6 +700,99 @@ mcp-skillset repo update anthropic-skills
 ```
 
 **Note:** After updating, run `mcp-skillset index --incremental` to index new skills.
+
+### GitHub Discovery Commands
+
+Automatically discover skill repositories on GitHub.
+
+#### `discover search` - Search GitHub
+
+Search GitHub for skill repositories using natural language queries.
+
+```bash
+# Basic search
+mcp-skillset discover search "python testing"
+
+# With minimum stars filter
+mcp-skillset discover search "fastapi" --min-stars 10
+
+# Limit results
+mcp-skillset discover search "react typescript" --limit 20
+```
+
+**Features:**
+- Natural language search queries
+- Automatic SKILL.md verification
+- Star count filtering
+- Rich metadata display (stars, forks, topics, license)
+
+#### `discover trending` - Get Trending Repos
+
+Find recently updated skill repositories.
+
+```bash
+# Weekly trending (default)
+mcp-skillset discover trending
+
+# Monthly trending
+mcp-skillset discover trending --timeframe month
+
+# Filter by topic
+mcp-skillset discover trending --topic claude-skills
+```
+
+**Timeframes:** `week`, `month`, `year`
+
+#### `discover topic` - Search by Topic
+
+Search repositories by GitHub topic.
+
+```bash
+# Search by topic
+mcp-skillset discover topic claude-skills
+
+# With stars filter
+mcp-skillset discover topic mcp-skills --min-stars 5
+```
+
+**Common topics:**
+- `claude-skills` - Claude AI skills
+- `anthropic-skills` - Anthropic skills
+- `mcp-skills` - MCP protocol skills
+- `ai-skills` - General AI skills
+
+#### `discover verify` - Verify Repository
+
+Verify that a repository contains SKILL.md files before adding.
+
+```bash
+mcp-skillset discover verify https://github.com/anthropics/skills.git
+```
+
+**Output includes:**
+- SKILL.md verification status
+- Repository metadata (stars, forks, license)
+- Topics and description
+- Command to add repository if valid
+
+#### `discover limits` - API Rate Limits
+
+Check your current GitHub API rate limit status.
+
+```bash
+mcp-skillset discover limits
+```
+
+**Rate limits:**
+- Unauthenticated: 60 requests/hour
+- Authenticated (with token): 5000 requests/hour
+
+**To increase limits:**
+```bash
+export GITHUB_TOKEN=your_github_token_here
+```
+
+**See also:** [GitHub Discovery Documentation](./docs/GITHUB_DISCOVERY.md) for detailed usage and configuration.
 
 ### Utility Commands
 

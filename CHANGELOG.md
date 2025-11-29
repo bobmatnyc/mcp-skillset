@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.8] - 2025-11-29
+
+### Fixed
+- **Installer Default Behavior** ([1M-408](https://linear.app/1m-hyperdev/issue/1M-408))
+  - Default installer now excludes Claude Desktop to avoid config conflicts
+  - `mcp-skillset install` and `mcp-skillset setup` now only install for Claude Code and Auggie by default
+  - Users wanting Claude Desktop must explicitly use `--agent claude-desktop`
+  - Prevents conflicts between Claude Desktop and Claude Code (similar config paths)
+- **Agent Name Display** ([1M-409](https://linear.app/1m-hyperdev/issue/1M-409))
+  - Installer now correctly displays "Claude Code" for Claude Code paths
+  - Prevents user confusion about which agent is being configured
+  - Added 6 regression tests for agent name detection
+
+### Testing
+- 9 new tests added for installer behavior
+- `tests/cli/test_install_defaults.py` - Default behavior validation
+- `tests/test_agent_installer.py` - Enhanced agent detection tests
+- All existing tests pass
+
+### Changed
+- `src/mcp_skills/cli/main.py` - Updated install/setup command logic
+- Default agents list now excludes Claude Desktop
+- Agent detection logic improved for correct name display
+
 ## [0.6.7] - 2025-11-29
 
 ### Changed

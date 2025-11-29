@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.7] - 2025-11-29
+
+### Changed
+- **BREAKING**: Renamed MCP tools to follow object_verb naming convention
+  - `search_skills` → `skills_search` - Search for skills using hybrid RAG
+  - `get_skill` → `skill_get` - Get complete skill details by ID
+  - `recommend_skills` → `skills_recommend` - Get skill recommendations
+  - `list_categories` → `skill_categories` - List all skill categories
+  - `reindex_skills` → `skills_reindex` - Rebuild skill index
+  - `list_skill_templates` → `skill_templates_list` - List available templates
+  - `skill_create` remains unchanged (already follows convention)
+
+### Migration Guide
+If you're using these MCP tools directly:
+
+**Before (v0.6.6 and earlier):**
+```python
+await search_skills(query="pytest", limit=10)
+await get_skill(skill_id="pytest-skill")
+await recommend_skills(project_path="/path/to/project")
+await list_categories()
+await reindex_skills(force=True)
+await list_skill_templates()
+```
+
+**After (v0.6.7+):**
+```python
+await skills_search(query="pytest", limit=10)
+await skill_get(skill_id="pytest-skill")
+await skills_recommend(project_path="/path/to/project")
+await skill_categories()
+await skills_reindex(force=True)
+await skill_templates_list()
+```
+
+**Note:** If you're using the MCP server through Claude Desktop, Claude Code, or other MCP clients, the tool names in your configuration and prompts will need to be updated to use the new names.
+
 ## [0.6.6] - 2025-11-29
 
 ### Fixed

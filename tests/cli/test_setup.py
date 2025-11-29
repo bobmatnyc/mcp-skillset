@@ -207,7 +207,11 @@ class TestSetupCommand:
 
         mock_repo_manager = Mock()
         mock_repo_manager.DEFAULT_REPOS = [
-            {"url": "https://github.com/example/skills.git", "priority": 1, "license": "MIT"}
+            {
+                "url": "https://github.com/example/skills.git",
+                "priority": 1,
+                "license": "MIT",
+            }
         ]
         mock_repo_manager.add_repository.return_value = None
         mock_repo_manager.list_repositories.return_value = []

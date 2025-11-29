@@ -72,7 +72,9 @@ class TestCLISetupCommand:
         assert "Step 3/6" in result.output
         assert "Step 4/6" in result.output
         assert "Step 5/6" in result.output
-        assert "Step 6/6" in result.output or "Skipped agent installation" in result.output
+        assert (
+            "Step 6/6" in result.output or "Skipped agent installation" in result.output
+        )
 
         # Verify toolchain detection
         assert "Detecting project toolchain" in result.output

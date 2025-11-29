@@ -73,7 +73,7 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
     3. Index skills with vector + KG
     4. Configure MCP server
     5. Validate setup
-    6. Install for AI agents (Claude Desktop, Claude Code, Auggie)
+    6. Install for AI agents (Claude Code, Auggie by default; excludes Claude Desktop)
     """
     console.print("🚀 [bold green]Starting mcp-skillset setup...[/bold green]")
     console.print(f"📁 Project directory: {project_dir}")
@@ -216,10 +216,14 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
         agents_installed = 0
         if not skip_agents:
             console.print()
-            console.print("[bold cyan]Step 6/6:[/bold cyan] Installing for AI agents...")
+            console.print(
+                "[bold cyan]Step 6/6:[/bold cyan] Installing for AI agents..."
+            )
 
             detector = AgentDetector()
-            found_agents = [a for a in detector.detect_all() if a.exists]
+            # Exclude Claude Desktop by default (config path conflicts with Claude Code)
+            all_agents = detector.detect_all()
+            found_agents = [a for a in all_agents if a.exists and a.id != "claude-desktop"]
 
             if found_agents:
                 console.print(f"  ✓ Detected {len(found_agents)} agent(s):")
@@ -248,15 +252,23 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
                         except Exception as e:
                             console.print(f"    ✗ {agent.name} error: {str(e)}")
 
-                    console.print(f"\n  Installed for {success_count}/{len(found_agents)} agent(s)")
+                    console.print(
+                        f"\n  Installed for {success_count}/{len(found_agents)} agent(s)"
+                    )
                     agents_installed = success_count
                 else:
                     console.print("  Skipped agent installation")
             else:
-                console.print("  No AI agents detected (Claude Desktop, Claude Code, Auggie)")
-                console.print("  You can install manually later with: mcp-skillset install")
+                console.print(
+                    "  No AI agents detected (Claude Desktop, Claude Code, Auggie)"
+                )
+                console.print(
+                    "  You can install manually later with: mcp-skillset install"
+                )
         else:
-            console.print("\n[dim]Skipped agent installation (--skip-agents flag)[/dim]")
+            console.print(
+                "\n[dim]Skipped agent installation (--skip-agents flag)[/dim]"
+            )
 
         console.print()
 
@@ -265,18 +277,24 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
             console.print("[bold green]✓ Setup complete![/bold green]\n")
             console.print("Next steps:")
             if agents_installed > 0:
-                console.print("  1. [cyan]Restart your AI agent[/cyan] to load mcp-skillset")
+                console.print(
+                    "  1. [cyan]Restart your AI agent[/cyan] to load mcp-skillset"
+                )
                 console.print("  2. [cyan]Explore skills:[/cyan] mcp-skillset demo")
                 console.print(
                     "  3. [cyan]Search skills:[/cyan] mcp-skillset search 'python testing'"
                 )
             else:
-                console.print("  1. [cyan]Install for agents:[/cyan] mcp-skillset install")
+                console.print(
+                    "  1. [cyan]Install for agents:[/cyan] mcp-skillset install"
+                )
                 console.print("  2. [cyan]Explore skills:[/cyan] mcp-skillset demo")
                 console.print(
                     "  3. [cyan]Search skills:[/cyan] mcp-skillset search 'python testing'"
                 )
-                console.print("  4. [cyan]Show skill:[/cyan] mcp-skillset show <skill-id>")
+                console.print(
+                    "  4. [cyan]Show skill:[/cyan] mcp-skillset show <skill-id>"
+                )
             console.print()
             console.print(
                 "[dim]💡 Tip: Try 'mcp-skillset demo' to see example questions for each skill![/dim]"
@@ -303,7 +321,7 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
     "--agent",
     type=click.Choice(["claude-desktop", "claude-code", "auggie", "all"]),
     default="all",
-    help="Which agent to install for",
+    help="Which agent to install for (default: claude-code and auggie, excludes claude-desktop)",
 )
 @click.option(
     "--dry-run",
@@ -318,8 +336,9 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
 def install(agent: str, dry_run: bool, force: bool) -> None:
     """Install MCP SkillSet for AI agents with auto-detection.
 
-    Automatically detects installed AI agents (Claude Desktop, Claude Code, Auggie)
-    and configures them to use mcp-skillset as an MCP server.
+    Automatically detects installed AI agents (Claude Code, Auggie) and configures
+    them to use mcp-skillset as an MCP server. Claude Desktop is excluded by default
+    due to config path conflicts with Claude Code.
 
     The command will:
     1. Scan for installed AI agents on your system
@@ -331,10 +350,10 @@ def install(agent: str, dry_run: bool, force: bool) -> None:
     Use --force to overwrite existing mcp-skillset configuration.
 
     Examples:
-        mcp-skillset install                    # Install for all detected agents
-        mcp-skillset install --agent claude-desktop  # Install for specific agent
-        mcp-skillset install --dry-run          # Preview changes
-        mcp-skillset install --force            # Overwrite existing config
+        mcp-skillset install                         # Install for Claude Code and Auggie (default)
+        mcp-skillset install --agent claude-desktop  # Install for Claude Desktop explicitly
+        mcp-skillset install --dry-run               # Preview changes
+        mcp-skillset install --force                 # Overwrite existing config
     """
     console.print("🔍 [bold green]MCP SkillSet Agent Installer[/bold green]\n")
 
@@ -347,7 +366,10 @@ def install(agent: str, dry_run: bool, force: bool) -> None:
         detector = AgentDetector()
 
         if agent == "all":
-            detected_agents = detector.detect_all()
+            # Default behavior: exclude Claude Desktop (config path conflicts with Claude Code)
+            # Users can explicitly use --agent claude-desktop if needed
+            all_agents = detector.detect_all()
+            detected_agents = [a for a in all_agents if a.id != "claude-desktop"]
         else:
             single_agent = detector.detect_agent(agent)
             detected_agents = [single_agent] if single_agent else []
@@ -1952,6 +1974,206 @@ def _handle_set_config(set_value: str) -> None:
     except Exception as e:
         console.print(f"[red]Failed to set configuration: {e}[/red]")
         logger.exception("Config set failed")
+        raise SystemExit(1)
+
+
+@cli.command("build-skill")
+@click.option("--name", required=False, help="Skill name (e.g., 'FastAPI Testing')")
+@click.option("--description", required=False, help="What the skill does")
+@click.option("--domain", required=False, help="Domain (e.g., 'web development')")
+@click.option("--tags", help="Comma-separated tags (e.g., 'fastapi,testing,pytest')")
+@click.option(
+    "--template",
+    type=click.Choice(["base", "web-development", "api-development", "testing"]),
+    default="base",
+    help="Template to use",
+)
+@click.option("--no-deploy", is_flag=True, help="Don't deploy to ~/.claude/skills/")
+@click.option("--interactive", is_flag=True, help="Interactive mode with prompts")
+@click.option("--preview", is_flag=True, help="Preview without deploying")
+def build_skill(
+    name: str | None,
+    description: str | None,
+    domain: str | None,
+    tags: str | None,
+    template: str,
+    no_deploy: bool,
+    interactive: bool,
+    preview: bool,
+) -> None:
+    """Build a progressive skill from template.
+
+    Examples:
+      # Build from command line arguments
+      mcp-skillset build-skill \\
+        --name "FastAPI Testing" \\
+        --description "Test FastAPI endpoints with pytest" \\
+        --domain "web development" \\
+        --tags "fastapi,pytest,testing" \\
+        --template web-development
+
+      # Interactive mode
+      mcp-skillset build-skill --interactive
+
+      # Preview without deploying
+      mcp-skillset build-skill --name "..." --description "..." --domain "..." --preview
+    """
+    from mcp_skills.services.skill_builder import SkillBuilder
+
+    console.print("🔨 [bold green]Building Progressive Skill[/bold green]\n")
+
+    try:
+        # Initialize SkillBuilder
+        builder = SkillBuilder()
+
+        # Interactive mode
+        if interactive:
+            name = click.prompt("Skill name", type=str)
+            description = click.prompt("Description", type=str)
+            domain = click.prompt("Domain (e.g., 'web development')", type=str)
+            tags_input = click.prompt("Tags (comma-separated)", default="", type=str)
+            tags = tags_input if tags_input else None
+
+            # Show available templates
+            console.print("\n[bold cyan]Available Templates:[/bold cyan]")
+            templates = builder.list_templates()
+            for i, tmpl in enumerate(templates, 1):
+                console.print(f"  {i}. {tmpl}")
+
+            template_choice = click.prompt(
+                "\nSelect template number",
+                type=int,
+                default=1,
+            )
+            if 1 <= template_choice <= len(templates):
+                template = templates[template_choice - 1]
+
+            # Confirm deployment
+            if (
+                not preview
+                and not no_deploy
+                and not click.confirm("\nDeploy to ~/.claude/skills/?", default=True)
+            ):
+                no_deploy = True
+
+        # Validate required parameters
+        if not name:
+            console.print("[red]Error: --name is required (or use --interactive)[/red]")
+            raise SystemExit(1)
+        if not description:
+            console.print(
+                "[red]Error: --description is required (or use --interactive)[/red]"
+            )
+            raise SystemExit(1)
+        if not domain:
+            console.print(
+                "[red]Error: --domain is required (or use --interactive)[/red]"
+            )
+            raise SystemExit(1)
+
+        # Parse tags
+        tag_list = [tag.strip() for tag in tags.split(",")] if tags else []
+
+        # Build skill
+        console.print("[bold cyan]Building skill...[/bold cyan]")
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Generating from template...", total=None)
+
+            result = builder.build_skill(
+                name=name,
+                description=description,
+                domain=domain,
+                tags=tag_list,
+                template=template,
+                deploy=(not no_deploy and not preview),
+            )
+
+            progress.update(task, completed=True)
+
+        # Handle result
+        if result["status"] == "error":
+            console.print(f"\n[red]✗ Build failed: {result['message']}[/red]")
+            if "errors" in result:
+                for error in result["errors"]:
+                    console.print(f"  • {error}")
+            raise SystemExit(1)
+
+        # Display success
+        console.print(
+            f"\n[green]✓[/green] Skill '{result['skill_id']}' created successfully"
+        )
+
+        # Show validation warnings
+        if result.get("warnings"):
+            console.print("\n[yellow]Warnings:[/yellow]")
+            for warning in result["warnings"]:
+                console.print(f"  ⚠ {warning}")
+
+        # Preview mode: show content
+        if preview:
+            console.print("\n[bold cyan]Preview:[/bold cyan]")
+            console.print("─" * 80)
+
+            # Re-generate for preview (without deployment)
+            builder.build_skill(
+                name=name,
+                description=description,
+                domain=domain,
+                tags=tag_list,
+                template=template,
+                deploy=False,
+            )
+
+            # Read from temporary location or regenerate
+            from mcp_skills.services.skill_builder import SkillBuilder
+
+            preview_builder = SkillBuilder()
+            context = preview_builder._build_template_context(
+                name=name,
+                skill_id=result["skill_id"],
+                description=description,
+                domain=domain,
+                tags=tag_list,
+            )
+            content = preview_builder._generate_from_template(template, context)
+
+            # Show first 50 lines
+            lines = content.split("\n")
+            preview_lines = lines[:50]
+            console.print("\n".join(preview_lines))
+            if len(lines) > 50:
+                console.print(f"\n[dim]... ({len(lines) - 50} more lines)[/dim]")
+
+            console.print("─" * 80)
+            console.print("\n[yellow]Preview mode: Skill not deployed[/yellow]")
+            console.print("Remove --preview flag to deploy to ~/.claude/skills/")
+
+        elif result["skill_path"]:
+            console.print("\n[bold]Deployment Path:[/bold]")
+            console.print(f"  {result['skill_path']}")
+
+            console.print("\n[bold]Next Steps:[/bold]")
+            console.print("  1. Review the skill file")
+            console.print("  2. Restart Claude Code to load the skill")
+            console.print(
+                f"  3. Use the skill by mentioning '{domain}' in your prompts"
+            )
+
+        else:
+            console.print(
+                "\n[yellow]Skill created but not deployed (--no-deploy flag)[/yellow]"
+            )
+
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Build cancelled by user[/yellow]")
+        raise SystemExit(1)
+    except Exception as e:
+        console.print(f"\n[red]Build failed: {e}[/red]")
+        logger.exception("Skill build failed")
         raise SystemExit(1)
 
 

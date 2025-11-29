@@ -125,6 +125,139 @@ This is useful for:
 - Subsequent runs use the cached model (no download required)
 - The cache persists across mcp-skillset updates
 
+## Building Progressive Skills
+
+mcp-skillset now includes the ability to **create custom progressive skills** that become immediately available to Claude Code and other AI assistants. Skills are stored in `~/.claude/skills/` and loaded automatically.
+
+### What are Progressive Skills?
+
+Progressive skills are modular capabilities that:
+- **Load in two stages**: Lightweight metadata (~100 tokens) at startup, full body (<5k tokens) when activated
+- **Auto-activate** based on project context (toolchain, frameworks, keywords)
+- **Persist across sessions** - once created, always available
+- **Follow best practices** - templates ensure quality and consistency
+
+### Creating Skills
+
+#### CLI: Interactive Mode (Recommended)
+```bash
+mcp-skillset build-skill --interactive
+```
+
+You'll be prompted for:
+- **Name**: Skill identifier (e.g., "FastAPI Testing")
+- **Description**: What it does and when to use it
+- **Domain**: Category (e.g., "web development")
+- **Tags**: Keywords for discovery (e.g., "fastapi,pytest,testing")
+- **Template**: Choose from specialized templates
+
+#### CLI: Command-Line Mode
+```bash
+mcp-skillset build-skill \
+  --name "FastAPI Testing" \
+  --description "Comprehensive testing strategies for FastAPI applications using pytest, httpx, and test clients" \
+  --domain "web development" \
+  --tags "fastapi,pytest,testing,web" \
+  --template web-development
+```
+
+#### CLI: Preview Mode
+Preview the generated skill without deploying:
+```bash
+mcp-skillset build-skill \
+  --name "FastAPI Testing" \
+  --description "Comprehensive testing strategies for FastAPI applications" \
+  --domain "web development" \
+  --preview
+```
+
+#### MCP Tool (For AI Agents)
+```python
+# Via MCP server
+result = await skill_create(
+    name="GraphQL API Design",
+    description="Design and implement GraphQL APIs with schema-first approach",
+    domain="api development",
+    tags=["graphql", "api", "apollo"],
+    template="api-development",
+    deploy=True
+)
+```
+
+### Available Templates
+
+| Template | Best For | Use Cases |
+|----------|----------|-----------|
+| **web-development** | Web apps | Frontend, backend, full-stack patterns |
+| **api-development** | APIs | REST, GraphQL, authentication, rate limiting |
+| **testing** | QA workflows | TDD, unit/integration/E2E testing |
+
+**Note**: The `base` template is currently recommended for advanced users only due to validation limitations. Use specialized templates for production skills.
+
+### Examples
+
+**Creating a FastAPI testing skill**:
+```bash
+mcp-skillset build-skill \
+  --name "FastAPI Testing" \
+  --description "Test FastAPI endpoints with pytest and httpx clients" \
+  --domain "web development" \
+  --tags "fastapi,pytest,testing" \
+  --template web-development
+```
+
+**Creating a GraphQL API skill**:
+```bash
+mcp-skillset build-skill \
+  --name "GraphQL API Design" \
+  --description "Schema-first GraphQL API design with Apollo Server" \
+  --domain "api development" \
+  --tags "graphql,apollo,api" \
+  --template api-development
+```
+
+**Creating a TDD workflow skill**:
+```bash
+mcp-skillset build-skill \
+  --name "TDD Workflow" \
+  --description "Test-driven development workflow with red-green-refactor cycle" \
+  --domain "testing" \
+  --tags "tdd,testing,workflow" \
+  --template testing
+```
+
+### Deployment
+
+Skills are automatically deployed to `~/.claude/skills/skill-name/SKILL.md` and become immediately available to:
+- **Claude Code** (VS Code extension)
+- **Claude Desktop** (standalone app)
+- **Auggie** (if configured)
+
+### Skill Structure
+
+Generated skills include:
+- **YAML Frontmatter**: Metadata (name, description, tags, version)
+- **Overview**: What the skill does
+- **When to Use**: Activation context
+- **Core Principles**: Best practices with examples
+- **Common Patterns**: Proven approaches
+- **Anti-Patterns**: What to avoid
+- **Testing Strategies**: Validation approaches
+- **Related Skills**: Complementary skills
+
+### Next Steps
+
+After creating skills:
+1. **Test activation**: Start a project matching your skill's tags
+2. **Verify loading**: Check that Claude references your skill
+3. **Iterate**: Update skills based on usage
+4. **Share**: Export skills for team use
+
+For detailed documentation, see:
+- **API Reference**: [docs/skill-builder-usage.md](docs/skill-builder-usage.md)
+- **Examples**: [examples/skill_builder_demo.py](examples/skill_builder_demo.py)
+- **QA Report**: [QA_REPORT_SKILL_BUILDER.md](QA_REPORT_SKILL_BUILDER.md)
+
 ## Quick Start
 
 ### 1. Setup
@@ -383,6 +516,7 @@ mcp-skillset provides a rich, interactive CLI with comprehensive command-line op
 | `index` | Rebuild indices | `--incremental`, `--force` |
 | `install` | Install for AI agents | `--agent`, `--dry-run` |
 | `mcp` | Start MCP server | `--dev` |
+| `build-skill` | Create progressive skills | `--interactive`, `--preview`, `--template` |
 | `search` | Find skills by query | `--limit`, `--category`, `--search-mode` |
 | `list` | List all skills | `--category`, `--compact` |
 | `info` / `show` | Show skill details | (skill-id argument) |
@@ -501,6 +635,65 @@ mcp-skillset install --force
 - `auggie` - Auggie AI Assistant
 - `all` - Install for all detected agents
 
+#### `build-skill` - Progressive Skill Creation
+
+Create custom progressive skills from templates. Skills are deployed to `~/.claude/skills/` for immediate use.
+
+```bash
+# Interactive mode (recommended)
+mcp-skillset build-skill --interactive
+
+# Standard mode with all parameters
+mcp-skillset build-skill \
+  --name "FastAPI Testing" \
+  --description "Comprehensive testing strategies for FastAPI applications" \
+  --domain "web development" \
+  --tags "fastapi,pytest,testing,web" \
+  --template web-development
+
+# Preview mode (no deployment)
+mcp-skillset build-skill \
+  --name "GraphQL API Design" \
+  --description "Schema-first GraphQL API design" \
+  --domain "api development" \
+  --preview
+
+# Disable auto-deployment
+mcp-skillset build-skill \
+  --name "Test Skill" \
+  --description "Testing skill creation" \
+  --domain "testing" \
+  --no-deploy
+```
+
+**Parameters:**
+- `--name` (required in standard mode): Skill name
+- `--description` (required in standard mode): What the skill does (min 20 chars)
+- `--domain` (required in standard mode): Category (e.g., "web development")
+- `--tags` (optional): Comma-separated keywords
+- `--template` (optional): Template choice (default: base)
+  - `web-development` - Full-stack web patterns
+  - `api-development` - REST/GraphQL APIs
+  - `testing` - TDD and testing workflows
+  - `base` - Generic template (advanced users only)
+- `--interactive` (optional): Interactive mode with prompts
+- `--preview` (optional): Show generated content without deploying
+- `--no-deploy` (optional): Disable automatic deployment
+
+**Available Templates:**
+- **web-development**: Frontend, backend, full-stack patterns ✅ Production ready
+- **api-development**: REST, GraphQL, authentication ✅ Production ready
+- **testing**: TDD, unit/integration/E2E testing ✅ Production ready
+- **base**: Generic template ⚠️ Advanced users only (validation limitations)
+
+**Output:**
+- Skills deployed to: `~/.claude/skills/{skill-name}/SKILL.md`
+- Immediately available to Claude Code, Claude Desktop, and Auggie
+- Validation results and warnings displayed
+- Skill ID and path returned
+
+**See also:** [Building Progressive Skills](#building-progressive-skills) section for examples and detailed usage.
+
 #### `mcp` - MCP Server
 
 Start the Model Context Protocol server for integration with code assistants.
@@ -516,7 +709,7 @@ mcp-skillset mcp --dev
 **Server details:**
 - Transport: stdio (standard input/output)
 - Protocol: Model Context Protocol v1.0
-- Tools exposed: search_skills, get_skill, recommend_skills, list_categories, update_repositories
+- Tools exposed: skills_search, skill_get, skills_recommend, skill_categories, skills_reindex, skill_templates_list, skill_create
 
 ### Search & Discovery Commands
 
@@ -992,13 +1185,152 @@ For detailed installation instructions, troubleshooting, and advanced usage, see
 
 ## MCP Tools
 
-mcp-skillset exposes these tools to code assistants:
+mcp-skillset provides 7 MCP tools for AI assistants:
 
-- **search_skills**: Natural language skill search
-- **get_skill**: Load full skill instructions by ID
-- **recommend_skills**: Get recommendations for current project
-- **list_categories**: List all skill categories
-- **update_repositories**: Pull latest skills from git
+1. **skills_search** - Semantic search with hybrid RAG (vector + knowledge graph)
+2. **skill_get** - Retrieve complete skill details by ID
+3. **skills_recommend** - Context-aware skill recommendations based on project toolchain
+4. **skill_categories** - Browse available skill categories and toolchains
+5. **skills_reindex** - Rebuild search indices (vector store + knowledge graph)
+6. **skill_templates_list** - List available skill templates for progressive skill creation
+7. **skill_create** - Create progressive skills from templates and deploy to ~/.claude/skills/
+
+### Tool Details
+
+#### 1. skills_search
+Natural language semantic search over all indexed skills using hybrid RAG.
+
+**Parameters**:
+- `query` (required): Search query string
+- `limit` (optional): Maximum number of results (default: 10)
+- `category` (optional): Filter by skill category
+
+**Returns**: Array of matching skills with relevance scores
+
+**Example**:
+```python
+# Search for testing skills
+results = await skills_search(
+    query="python unit testing frameworks",
+    limit=5
+)
+
+# Search with category filter
+results = await skills_search(
+    query="debugging",
+    category="Python"
+)
+```
+
+#### 2. skill_get
+Retrieve complete skill details and instructions by skill ID.
+
+**Parameters**:
+- `skill_id` (required): Unique skill identifier
+
+**Returns**: Full skill object with instructions, metadata, and examples
+
+**Example**:
+```python
+# Get specific skill details
+skill = await skill_get(skill_id="pytest-fixtures")
+
+# Use skill instructions
+print(skill.instructions)
+```
+
+#### 3. skills_recommend
+Get intelligent skill recommendations based on project toolchain detection.
+
+**Parameters**: None (auto-detects current project)
+
+**Returns**: Array of recommended skills ranked by relevance to detected toolchain
+
+**Example**:
+```python
+# Get recommendations for current project
+recommendations = await skills_recommend()
+
+# Returns skills relevant to detected languages, frameworks, and tools
+```
+
+#### 4. skill_categories
+List all available skill categories and toolchain associations.
+
+**Parameters**: None
+
+**Returns**: Array of category names with skill counts
+
+**Example**:
+```python
+# List all categories
+categories = await skill_categories()
+
+# Returns: ["Python", "Testing", "Debugging", "Web Development", ...]
+```
+
+#### 5. skills_reindex
+Rebuild vector store and knowledge graph indices from skill repositories.
+
+**Parameters**:
+- `force` (optional): Force full reindex (default: false)
+
+**Returns**: Indexing status and statistics
+
+**Example**:
+```python
+# Incremental reindex (only new/changed skills)
+status = await skills_reindex()
+
+# Force full reindex
+status = await skills_reindex(force=True)
+```
+
+#### 6. skill_templates_list
+List available skill templates with descriptions and use cases.
+
+**Parameters**: None
+
+**Returns**: Array of templates with metadata (name, description, best_for, use_cases)
+
+**Example**:
+```python
+templates = await skill_templates_list()
+# Returns: [
+#   {
+#     "name": "web-development",
+#     "description": "Full-stack web development patterns",
+#     "best_for": "Web applications",
+#     "use_cases": ["Frontend", "Backend", "Full-stack"]
+#   },
+#   ...
+# ]
+```
+
+#### 7. skill_create
+Create progressive skills from templates. Skills are deployed to `~/.claude/skills/` for immediate use.
+
+**Parameters**:
+- `name` (required): Skill name
+- `description` (required): What the skill does
+- `domain` (required): Category (e.g., "web development")
+- `tags` (optional): List of keywords
+- `template` (optional): Template choice (web-development, api-development, testing, base)
+- `deploy` (optional): Whether to deploy (default: true)
+
+**Returns**: Status, skill_id, skill_path, validation results
+
+**Example**:
+```python
+result = await skill_create(
+    name="FastAPI Testing",
+    description="Comprehensive testing strategies for FastAPI applications",
+    domain="web development",
+    tags=["fastapi", "pytest", "testing"],
+    template="web-development",
+    deploy=True
+)
+```
 
 ## Development
 

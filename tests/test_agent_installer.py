@@ -424,3 +424,63 @@ class TestInstallResult:
         assert not result.success
         assert result.error == "Something went wrong"
         assert result.backup_path is None
+
+
+class TestAgentNameDetection:
+    """Test suite for agent name detection bug fixes."""
+
+    def test_claude_code_name_is_correct(self):
+        """Test that Claude Code is detected with correct name (Bug Fix #2)."""
+        detector = AgentDetector()
+        agent = detector.detect_agent("claude-code")
+
+        assert agent is not None
+        assert agent.name == "Claude Code"
+        assert agent.id == "claude-code"
+        assert "Code" in str(agent.config_path)
+        assert "settings.json" in str(agent.config_path)
+
+    def test_claude_desktop_name_is_correct(self):
+        """Test that Claude Desktop is detected with correct name (Bug Fix #2)."""
+        detector = AgentDetector()
+        agent = detector.detect_agent("claude-desktop")
+
+        assert agent is not None
+        assert agent.name == "Claude Desktop"
+        assert agent.id == "claude-desktop"
+        assert "Claude" in str(agent.config_path)
+        assert "claude_desktop_config.json" in str(agent.config_path)
+
+    def test_all_agents_have_unique_names(self):
+        """Test that all detected agents have unique, correct names."""
+        detector = AgentDetector()
+        agents = detector.detect_all()
+
+        # Collect agent names
+        names = {agent.name for agent in agents}
+
+        # Verify expected agents have correct names
+        assert "Claude Desktop" in names
+        assert "Claude Code" in names
+        assert "Auggie" in names
+
+        # Verify no duplicate names
+        assert len(names) == len(agents)
+
+    def test_agent_name_matches_config_path(self):
+        """Test that agent names correctly match their config paths."""
+        detector = AgentDetector()
+        agents = detector.detect_all()
+
+        for agent in agents:
+            if agent.id == "claude-desktop":
+                assert agent.name == "Claude Desktop"
+                assert "Claude" in str(agent.config_path)
+                assert "claude_desktop_config.json" in str(agent.config_path)
+            elif agent.id == "claude-code":
+                assert agent.name == "Claude Code"
+                assert "Code" in str(agent.config_path)
+                assert "settings.json" in str(agent.config_path)
+            elif agent.id == "auggie":
+                assert agent.name == "Auggie"
+                assert "Auggie" in str(agent.config_path)

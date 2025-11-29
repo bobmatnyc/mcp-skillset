@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 from mcp_skills.mcp.server import configure_services
-from mcp_skills.mcp.tools.skill_tools import recommend_skills, reindex_skills
+from mcp_skills.mcp.tools.skill_tools import skills_recommend, skills_reindex
 from mcp_skills.services.toolchain_detector import ToolchainDetector
 
 
@@ -60,10 +60,10 @@ class TestPythonProjectAutoDetect:
         )
 
         # Reindex first
-        await reindex_skills(force=True)
+        await skills_reindex(force=True)
 
         # Get recommendations
-        result = await recommend_skills(
+        result = await skills_recommend(
             project_path=str(sample_python_project_e2e),
             limit=10,
         )
@@ -98,9 +98,9 @@ class TestPythonProjectAutoDetect:
             storage_path=e2e_storage_dir,
         )
 
-        await reindex_skills(force=True)
+        await skills_reindex(force=True)
 
-        result = await recommend_skills(
+        result = await skills_recommend(
             project_path=str(sample_python_project_e2e),
             limit=10,
         )
@@ -128,9 +128,9 @@ class TestPythonProjectAutoDetect:
             storage_path=e2e_storage_dir,
         )
 
-        await reindex_skills(force=True)
+        await skills_reindex(force=True)
 
-        result = await recommend_skills(
+        result = await skills_recommend(
             project_path=str(sample_python_project_e2e),
             limit=10,
         )
@@ -180,9 +180,9 @@ class TestTypeScriptProjectAutoDetect:
             storage_path=e2e_storage_dir,
         )
 
-        await reindex_skills(force=True)
+        await skills_reindex(force=True)
 
-        result = await recommend_skills(
+        result = await skills_recommend(
             project_path=str(sample_typescript_project_e2e),
             limit=10,
         )
@@ -215,9 +215,9 @@ class TestTypeScriptProjectAutoDetect:
             storage_path=e2e_storage_dir,
         )
 
-        await reindex_skills(force=True)
+        await skills_reindex(force=True)
 
-        result = await recommend_skills(
+        result = await skills_recommend(
             project_path=str(sample_typescript_project_e2e),
             limit=10,
         )
@@ -305,9 +305,9 @@ class TestMultiLanguageProjectAutoDetect:
             storage_path=e2e_storage_dir,
         )
 
-        await reindex_skills(force=True)
+        await skills_reindex(force=True)
 
-        result = await recommend_skills(
+        result = await skills_recommend(
             project_path=str(project_dir),
             limit=10,
         )
@@ -364,9 +364,9 @@ class TestEdgeCases:
             storage_path=e2e_storage_dir,
         )
 
-        await reindex_skills(force=True)
+        await skills_reindex(force=True)
 
-        result = await recommend_skills(
+        result = await skills_recommend(
             project_path=str(empty_dir),
             limit=10,
         )
@@ -450,9 +450,9 @@ class TestAutoDetectWorkflowIntegration:
             storage_path=e2e_storage_dir,
         )
 
-        await reindex_skills(force=True)
+        await skills_reindex(force=True)
 
-        result = await recommend_skills(
+        result = await skills_recommend(
             project_path=str(sample_python_project_e2e),
             limit=10,
         )
@@ -506,9 +506,9 @@ class TestAutoDetectWorkflowIntegration:
             storage_path=e2e_storage_dir,
         )
 
-        await reindex_skills(force=True)
+        await skills_reindex(force=True)
 
-        result = await recommend_skills(
+        result = await skills_recommend(
             project_path=str(sample_typescript_project_e2e),
             limit=10,
         )
@@ -534,9 +534,9 @@ class TestAutoDetectWorkflowIntegration:
             storage_path=e2e_storage_dir,
         )
 
-        await reindex_skills(force=True)
+        await skills_reindex(force=True)
 
-        result = await recommend_skills(
+        result = await skills_recommend(
             project_path=str(sample_python_project_e2e),
             limit=10,
         )

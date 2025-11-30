@@ -1,6 +1,7 @@
 """
 Discover command group implementation.
 """
+
 import logging
 from datetime import UTC, datetime
 

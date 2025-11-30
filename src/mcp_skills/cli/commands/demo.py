@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import builtins
-from typing import List as ListType
 
 import click
 
@@ -26,7 +25,7 @@ def demo(skill_id: str | None, interactive: bool) -> None:
         mcp-skillset demo --interactive    # Interactive selection
     """
 
-    def extract_concepts_local(instructions: str) -> ListType[str]:
+    def extract_concepts_local(instructions: str) -> list[str]:
         """Extract key concepts from skill instructions."""
         found_concepts = []
         instructions_lower = instructions.lower()
@@ -189,6 +188,7 @@ def demo(skill_id: str | None, interactive: bool) -> None:
     except Exception as e:
         console.print(f"[red]Demo failed: {e}[/red]")
         import logging
+
         logger = logging.getLogger(__name__)
         logger.exception("Demo failed")
         raise SystemExit(1)

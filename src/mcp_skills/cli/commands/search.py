@@ -106,6 +106,7 @@ def search(
     except Exception as e:
         console.print(f"[red]Search failed: {e}[/red]")
         import logging
+
         logger = logging.getLogger(__name__)
         logger.exception("Search failed")
         raise SystemExit(1)

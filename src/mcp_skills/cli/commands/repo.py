@@ -1,6 +1,7 @@
 """
 Repo command group implementation.
 """
+
 import logging
 
 import click
@@ -56,12 +57,10 @@ def repo_add(url: str, priority: int) -> None:
             TimeRemainingColumn(),
             console=console,
         ) as progress:
-            task = progress.add_task(
-                f"Cloning {repo_name}", total=100, start=False
-            )
+            task = progress.add_task(f"Cloning {repo_name}", total=100, start=False)
 
             # Progress callback updates this specific task
-            def update_progress(current: int, total: int, message: str) -> None:
+            def update_progress(current: int, total: int, _message: str) -> None:
                 if total > 0:
                     progress.update(task, completed=current, total=total)
                     if not progress.tasks[task].started:
@@ -211,7 +210,7 @@ def repo_update(repo_id: str | None) -> None:
                     # Progress callback updates this specific task
                     def make_callback(tid: int):  # type: ignore[misc]
                         def update_progress(
-                            current: int, total: int, message: str
+                            current: int, total: int, _message: str
                         ) -> None:
                             if total > 0:
                                 progress.update(tid, completed=current, total=total)

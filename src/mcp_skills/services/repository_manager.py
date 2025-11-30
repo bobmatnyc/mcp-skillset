@@ -3,9 +3,10 @@
 import logging
 import re
 import shutil
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable, TypedDict
+from typing import TypedDict
 from urllib.parse import urlparse
 
 import git
@@ -43,7 +44,7 @@ class CloneProgress(RemoteProgress):
 
     def update(
         self,
-        op_code: int,
+        _op_code: int,
         cur_count: int | float,
         max_count: int | float | None = None,
         message: str = "",

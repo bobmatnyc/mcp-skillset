@@ -1,6 +1,7 @@
 """
 Setup command implementation.
 """
+
 import builtins
 import logging
 from pathlib import Path
@@ -144,7 +145,7 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
                         # Progress callback updates this specific task
                         def make_callback(tid: int):  # type: ignore[misc]
                             def update_progress(
-                                current: int, total: int, message: str
+                                current: int, total: int, _message: str
                             ) -> None:
                                 if total > 0:
                                     progress.update(tid, completed=current, total=total)

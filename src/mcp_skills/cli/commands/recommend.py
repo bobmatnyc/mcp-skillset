@@ -122,6 +122,7 @@ def recommend(search_mode: str | None) -> None:
     except Exception as e:
         console.print(f"[red]Recommendations failed: {e}[/red]")
         import logging
+
         logger = logging.getLogger(__name__)
         logger.exception("Recommendations failed")
         raise SystemExit(1)

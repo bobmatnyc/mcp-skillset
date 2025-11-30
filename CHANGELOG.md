@@ -5,6 +5,75 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-11-30
+
+### Changed
+
+#### Complete CLI Refactoring ([1M-460](https://linear.app/1m-hyperdev/issue/1M-460))
+
+**Major architectural improvement reducing main.py from 2,644 lines to 67 lines (-97.5%)**
+
+This release represents a complete restructuring of the CLI architecture for improved maintainability, testability, and developer experience. All 14 CLI commands have been extracted into separate, focused modules.
+
+**Impact:**
+- **Maintainability**: Each command is now self-contained with clear responsibilities
+- **Testability**: Modular structure enables better unit testing
+- **Developer Experience**: Easier to understand, modify, and extend individual commands
+- **Code Quality**: Eliminated 2,577 lines of monolithic code
+
+**Architectural Changes:**
+```
+Before: src/mcp_skills/cli/main.py (2,644 lines)
+After:  src/mcp_skills/cli/
+        ├── main.py (67 lines) - Entry point only
+        ├── commands/
+        │   ├── build_skill.py - Skill template generation
+        │   ├── config.py - Configuration management
+        │   ├── demo.py - Interactive demonstration
+        │   ├── discover.py - Skill discovery
+        │   ├── doctor.py - System diagnostics
+        │   ├── enrich.py - Prompt enrichment
+        │   ├── index.py - Skill indexing
+        │   ├── info.py - Skill information
+        │   ├── install.py - Agent installation
+        │   ├── list_skills.py - Skill listing
+        │   ├── recommend.py - Skill recommendations
+        │   ├── repo.py - Repository management
+        │   ├── search.py - Skill search
+        │   ├── setup.py - Complete setup workflow
+        │   └── stats.py - Usage statistics
+        └── shared/
+            └── console.py - Shared Rich console instance
+```
+
+**Commits Included:**
+1. `feat: extract final 4 Priority 3 CLI commands (1M-460)`
+2. `docs: add CLI refactoring research documents (1M-460)`
+3. `feat: integrate all extracted CLI commands into main.py (1M-460)`
+4. `feat: extract build-skill and config commands (1M-460)`
+5. `feat: add per-repository progress bars for skill downloading`
+6. `feat: extract stats and enrich commands (1M-460)`
+7. `feat: extract recommend command (1M-460)`
+8. `feat: extract 3 medium CLI commands (search, doctor, demo) (1M-460)`
+9. `feat: extract first 4 CLI commands into modular structure (1M-460)`
+10. `docs: add comprehensive work summary for 2025-11-30 session`
+11. `docs: comprehensive architecture review and Linear tickets`
+12. `fix: eliminate HuggingFace tokenizers fork warnings during setup`
+
+**No Breaking Changes:**
+- All CLI commands work identically to v0.6.x
+- No changes to command arguments or behavior
+- Safe upgrade from any 0.6.x version
+
+**Upgrade Path:**
+```bash
+# PyPI
+pip install --upgrade mcp-skillset
+
+# Homebrew
+brew upgrade mcp-skillset
+```
+
 ## [0.6.8] - 2025-11-29
 
 ### Fixed

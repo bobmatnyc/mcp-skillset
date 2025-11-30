@@ -90,6 +90,7 @@ def list_skills(category: str | None, compact: bool) -> None:
     except Exception as e:
         console.print(f"[red]List failed: {e}[/red]")
         import logging
+
         logger = logging.getLogger(__name__)
         logger.exception("List failed")
         raise SystemExit(1)

@@ -12,6 +12,7 @@ from mcp_skills.cli.shared.console import console
 from mcp_skills.services.prompt_enricher import PromptEnricher
 from mcp_skills.services.skill_manager import SkillManager
 
+
 logger = logging.getLogger(__name__)
 
 

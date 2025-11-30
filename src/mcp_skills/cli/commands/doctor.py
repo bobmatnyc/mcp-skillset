@@ -133,6 +133,7 @@ def doctor() -> None:
     except Exception as e:
         console.print(f"\n[red]Health check failed: {e}[/red]")
         import logging
+
         logger = logging.getLogger(__name__)
         logger.exception("Health check failed")
         raise SystemExit(1)

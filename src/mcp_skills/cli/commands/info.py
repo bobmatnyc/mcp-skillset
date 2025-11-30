@@ -108,6 +108,7 @@ def info(skill_id: str) -> None:
     except Exception as e:
         console.print(f"[red]Info failed: {e}[/red]")
         import logging
+
         logger = logging.getLogger(__name__)
         logger.exception("Info failed")
         raise SystemExit(1)

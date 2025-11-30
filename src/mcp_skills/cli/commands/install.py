@@ -1,6 +1,7 @@
 """
 Install command implementation.
 """
+
 import logging
 
 import click

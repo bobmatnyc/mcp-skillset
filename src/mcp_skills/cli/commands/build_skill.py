@@ -9,6 +9,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from mcp_skills.cli.shared.console import console
 
+
 logger = logging.getLogger(__name__)
 
 

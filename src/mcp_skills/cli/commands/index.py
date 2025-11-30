@@ -85,6 +85,7 @@ def index(incremental: bool, force: bool) -> None:
                 progress.stop()
                 console.print(f"[red]✗ Indexing failed: {e}[/red]")
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.exception("Indexing failed")
                 raise SystemExit(1)
@@ -92,6 +93,7 @@ def index(incremental: bool, force: bool) -> None:
     except Exception as e:
         console.print(f"[red]Indexing failed: {e}[/red]")
         import logging
+
         logger = logging.getLogger(__name__)
         logger.exception("Indexing failed")
         raise SystemExit(1)

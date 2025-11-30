@@ -1274,12 +1274,13 @@ wheels = [
 
 [[package]]
 name = "mcp-skillset"
-version = "0.6.4"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "chromadb" },
     { name = "click" },
     { name = "gitpython" },
+    { name = "jinja2" },
     { name = "mcp" },
     { name = "networkx" },
     { name = "pydantic" },
@@ -1325,6 +1326,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.0" },
     { name = "detect-secrets", marker = "extra == 'dev'", specifier = ">=1.4.0" },
     { name = "gitpython", specifier = ">=3.1.0" },
+    { name = "jinja2", specifier = ">=3.1.0" },
     { name = "mcp", specifier = ">=0.1.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "neo4j", marker = "extra == 'neo4j'", specifier = ">=5.0.0" },

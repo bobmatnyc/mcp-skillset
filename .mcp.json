@@ -11,6 +11,13 @@
       "env": {
         "MCP_ENABLE_FILE_WATCHING": "true"
       }
+    },
+    "kuzu-memory": {
+      "type": "stdio",
+      "command": "kuzu-memory",
+      "args": [
+        "mcp"
+      ]
     }
   }
 }

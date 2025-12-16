@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, MagicMock, patch
 
 import pytest
 
@@ -56,7 +56,7 @@ class TestAgentDetector:
         agents = detector.detect_all()
 
         assert isinstance(agents, list)
-        assert len(agents) >= 3  # At least Claude Desktop, Claude Code, Auggie
+        assert len(agents) >= 8  # Now support 8 platforms: Claude Desktop, Claude Code, Auggie, Cursor, Windsurf, Continue, Codex, Gemini CLI
 
         for agent in agents:
             assert isinstance(agent, DetectedAgent)
@@ -102,7 +102,7 @@ class TestAgentDetector:
 
 
 class TestAgentInstaller:
-    """Test suite for AgentInstaller."""
+    """Test suite for AgentInstaller adapter (delegates to py-mcp-installer)."""
 
     @pytest.fixture
     def installer(self):
@@ -118,244 +118,49 @@ class TestAgentInstaller:
 
         return DetectedAgent(
             name="Test Agent",
-            id="test-agent",
+            id="cursor",  # Use a supported platform ID
             config_path=config_path,
             exists=False,
         )
 
-    def test_install_creates_new_config(self, installer, temp_agent, tmp_path):
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
+    def test_install_creates_new_config(self, mock_installer_cls, installer, temp_agent, tmp_path):
         """Test installation creates new config when none exists."""
+        # Mock MCPInstaller instance
+        mock_installer = Mock()
+        mock_installer.install_server.return_value = Mock(
+            success=True,
+            message="Installed successfully",
+            config_path=temp_agent.config_path,
+        )
+        mock_installer_cls.return_value = mock_installer
+
         result = installer.install(temp_agent)
 
         assert result.success
         assert result.agent_name == "Test Agent"
-        assert result.config_path.exists()
+        assert result.changes_made == "Installed successfully"
 
-        # Verify config content
-        with open(result.config_path) as f:
-            config = json.load(f)
+        # Verify MCPInstaller was called correctly
+        mock_installer.install_server.assert_called_once()
 
-        assert "mcpServers" in config
-        assert "mcp-skillset" in config["mcpServers"]
-        assert config["mcpServers"]["mcp-skillset"]["command"] == "mcp-skillset"
-
-    def test_install_with_existing_config(self, installer, temp_agent):
-        """Test installation updates existing config."""
-        # Create existing config
-        existing_config = {
-            "someOtherSetting": "value",
-            "mcpServers": {
-                "other-server": {
-                    "command": "other",
-                    "args": [],
-                }
-            },
-        }
-
-        temp_agent.config_path.write_text(json.dumps(existing_config))
-        temp_agent.exists = True
-
-        result = installer.install(temp_agent)
-
-        assert result.success
-
-        # Verify config merged correctly
-        with open(result.config_path) as f:
-            config = json.load(f)
-
-        assert config["someOtherSetting"] == "value"
-        assert "other-server" in config["mcpServers"]
-        assert "mcp-skillset" in config["mcpServers"]
-
-    def test_install_creates_backup(self, installer, temp_agent):
-        """Test that installation creates backup of existing config."""
-        # Create existing config
-        existing_config = {"existing": "data"}
-        temp_agent.config_path.write_text(json.dumps(existing_config))
-        temp_agent.exists = True
-
-        result = installer.install(temp_agent)
-
-        assert result.success
-        assert result.backup_path is not None
-        assert result.backup_path.exists()
-
-        # Verify backup contains original data
-        with open(result.backup_path) as f:
-            backup_config = json.load(f)
-
-        assert backup_config == existing_config
-
-    def test_install_refuses_duplicate_without_force(self, installer, temp_agent):
-        """Test installation fails if mcp-skillset already exists without --force."""
-        # Create config with existing mcp-skillset
-        existing_config = {
-            "mcpServers": {
-                "mcp-skillset": {
-                    "command": "old-command",
-                    "args": ["old"],
-                }
-            }
-        }
-
-        temp_agent.config_path.write_text(json.dumps(existing_config))
-        temp_agent.exists = True
-
-        result = installer.install(temp_agent, force=False)
-
-        assert not result.success
-        assert "already installed" in result.error
-
-    def test_install_overwrites_with_force(self, installer, temp_agent):
-        """Test installation overwrites existing mcp-skillset with --force."""
-        # Create config with existing mcp-skillset
-        existing_config = {
-            "mcpServers": {
-                "mcp-skillset": {
-                    "command": "old-command",
-                    "args": ["old"],
-                }
-            }
-        }
-
-        temp_agent.config_path.write_text(json.dumps(existing_config))
-        temp_agent.exists = True
-
-        result = installer.install(temp_agent, force=True)
-
-        assert result.success
-
-        # Verify new config
-        with open(result.config_path) as f:
-            config = json.load(f)
-
-        assert config["mcpServers"]["mcp-skillset"]["command"] == "mcp-skillset"
-        assert config["mcpServers"]["mcp-skillset"]["args"] == ["mcp"]
-
-    def test_install_dry_run_no_changes(self, installer, temp_agent):
-        """Test dry run mode doesn't modify files."""
-        result = installer.install(temp_agent, dry_run=True)
-
-        assert result.success
-        assert "DRY RUN" in result.changes_made
-        assert not temp_agent.config_path.exists()
-
-    def test_install_handles_corrupted_json(self, installer, temp_agent):
-        """Test installation fails gracefully with corrupted JSON."""
-        # Write invalid JSON
-        temp_agent.config_path.write_text("{ invalid json }")
-        temp_agent.exists = True
-
-        result = installer.install(temp_agent)
-
-        assert not result.success
-        assert "Failed to parse" in result.error
-
-    def test_install_handles_missing_directory(self, installer, tmp_path):
-        """Test installation fails when config directory doesn't exist."""
-        nonexistent_dir = tmp_path / "nonexistent"
-        config_path = nonexistent_dir / "config.json"
-
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
+    def test_unsupported_agent(self, mock_installer_cls, installer, tmp_path):
+        """Test installation fails for unsupported agent IDs."""
+        # Create agent with unsupported ID
         agent = DetectedAgent(
-            name="Test Agent",
-            id="test-agent",
-            config_path=config_path,
+            name="Unsupported Agent",
+            id="unsupported-agent-id",
+            config_path=tmp_path / "config.json",
             exists=False,
         )
 
         result = installer.install(agent)
 
         assert not result.success
-        assert "not found" in result.error
-
-    def test_config_validation(self, installer):
-        """Test configuration validation logic."""
-        # Valid config
-        valid_config = {
-            "mcpServers": {
-                "mcp-skillset": {
-                    "command": "mcp-skillset",
-                    "args": ["mcp"],
-                    "env": {},
-                }
-            }
-        }
-        assert installer._validate_config(valid_config)
-
-        # Missing mcpServers
-        invalid_config = {"other": "data"}
-        assert not installer._validate_config(invalid_config)
-
-        # Invalid mcpServers type
-        invalid_config = {"mcpServers": "not a dict"}
-        assert not installer._validate_config(invalid_config)
-
-        # Missing mcp-skillset
-        invalid_config = {"mcpServers": {"other": {}}}
-        assert not installer._validate_config(invalid_config)
-
-        # Invalid mcp-skillset structure
-        invalid_config = {
-            "mcpServers": {
-                "mcp-skillset": {
-                    "command": "mcp-skillset",
-                    # Missing 'args'
-                }
-            }
-        }
-        assert not installer._validate_config(invalid_config)
-
-    def test_backup_path_format(self, installer, temp_agent):
-        """Test backup file naming includes timestamp."""
-        # Create existing config
-        temp_agent.config_path.write_text("{}")
-        temp_agent.exists = True
-
-        result = installer.install(temp_agent)
-
-        assert result.success
-        assert result.backup_path is not None
-
-        # Verify backup filename format
-        backup_name = result.backup_path.name
-        assert backup_name.startswith("config.json.backup.")
-        assert len(backup_name.split(".")) >= 4  # name.json.backup.timestamp
-
-    def test_install_preserves_json_formatting(self, installer, temp_agent):
-        """Test that installed config is properly formatted JSON."""
-        result = installer.install(temp_agent)
-
-        assert result.success
-
-        # Read and verify formatting
-        config_text = result.config_path.read_text()
-
-        # Should be valid JSON
-        config = json.loads(config_text)
-        assert isinstance(config, dict)
-
-        # Should be pretty-printed (has indentation)
-        assert "  " in config_text or "\t" in config_text
-
-        # Should have trailing newline
-        assert config_text.endswith("\n")
-
-    def test_describe_changes_new_config(self, installer, temp_agent):
-        """Test change description for new config."""
-        description = installer._describe_changes({})
-        assert "new config" in description.lower()
-
-    def test_describe_changes_existing_config(self, installer, temp_agent):
-        """Test change description for existing config."""
-        existing = {"mcpServers": {"other": {}}}
-        description = installer._describe_changes(existing)
-        assert "add" in description.lower() or "mcp-skillset" in description.lower()
-
-    def test_describe_changes_update_existing(self, installer, temp_agent):
-        """Test change description when updating existing mcp-skillset."""
-        existing = {"mcpServers": {"mcp-skillset": {"command": "old"}}}
-        description = installer._describe_changes(existing)
-        assert "update" in description.lower()
+        assert "Unsupported agent" in result.error
+        # MCPInstaller should not be called
+        mock_installer_cls.assert_not_called()
 
 
 class TestClaudeCLIIntegration:
@@ -388,24 +193,23 @@ class TestClaudeCLIIntegration:
             exists=False,
         )
 
-    @patch("subprocess.run")
-    @patch("shutil.which")
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
     def test_claude_cli_installation_success(
-        self, mock_which, mock_run, installer, claude_code_agent
+        self, mock_installer_cls, installer, claude_code_agent
     ):
-        """Test successful Claude CLI installation.
+        """Test successful installation via py-mcp-installer.
 
-        Verifies that when the claude CLI is available and the add command
-        succeeds, the installation completes successfully.
+        Verifies that the adapter correctly delegates to py-mcp-installer
+        and returns success when installation completes.
         """
-        # Mock CLI available
-        mock_which.return_value = "/usr/local/bin/claude"
-
-        # Mock get command failure (server doesn't exist), then add success
-        mock_run.side_effect = [
-            Mock(returncode=1, stdout="", stderr="Not found"),  # get fails
-            Mock(returncode=0, stdout="", stderr=""),  # add succeeds
-        ]
+        # Mock MCPInstaller instance
+        mock_installer = Mock()
+        mock_installer.install_server.return_value = Mock(
+            success=True,
+            message="Installed successfully",
+            config_path=claude_code_agent.config_path,
+        )
+        mock_installer_cls.return_value = mock_installer
 
         # Install
         result = installer.install(claude_code_agent)
@@ -414,34 +218,32 @@ class TestClaudeCLIIntegration:
         assert result.success
         assert result.agent_name == "Claude Code"
         assert result.agent_id == "claude-code"
-        assert "Claude CLI" in result.changes_made
+        assert result.changes_made == "Installed successfully"
 
-        # Verify subprocess calls (get and add)
-        assert mock_run.call_count == 2
+        # Verify MCPInstaller was created with correct platform
+        mock_installer_cls.assert_called_once()
+        call_kwargs = mock_installer_cls.call_args[1]
+        assert "platform" in call_kwargs
+        assert call_kwargs["dry_run"] is False
 
-        # Verify get command
-        get_call = mock_run.call_args_list[0][0][0]
-        assert "claude" in get_call
-        assert "mcp" in get_call
-        assert "get" in get_call
-        assert "mcp-skillset" in get_call
+        # Verify install_server was called
+        mock_installer.install_server.assert_called_once_with(
+            name="mcp-skillset",
+            command="mcp-skillset",
+            args=["mcp"],
+            description="Dynamic RAG-powered skills for code assistants",
+        )
 
-        # Verify add command
-        add_call = mock_run.call_args_list[1][0][0]
-        assert "claude" in add_call
-        assert "mcp" in add_call
-        assert "add" in add_call
-        assert "mcp-skillset" in add_call
-
-    @patch("shutil.which")
-    def test_claude_cli_not_found(self, mock_which, installer, claude_code_agent):
-        """Test error when Claude CLI is not found.
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
+    def test_claude_cli_not_found(self, mock_installer_cls, installer, claude_code_agent):
+        """Test error when py-mcp-installer fails to initialize.
 
         Verifies that installation fails with clear error message when
-        the claude CLI is not available on the system.
+        py-mcp-installer cannot be initialized.
         """
-        # Mock CLI not available
-        mock_which.return_value = None
+        # Mock MCPInstaller initialization failure
+        from mcp_skills.services.py_mcp_installer_wrapper import PyMCPInstallerError
+        mock_installer_cls.side_effect = PyMCPInstallerError("Platform not supported")
 
         # Install
         result = installer.install(claude_code_agent)
@@ -449,24 +251,25 @@ class TestClaudeCLIIntegration:
         # Verify failure
         assert not result.success
         assert result.error is not None
-        assert "CLI not found" in result.error
-        assert "install Claude Code" in result.error
+        assert "Failed to create installer" in result.error
 
-    @patch("subprocess.run")
-    @patch("shutil.which")
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
     def test_claude_cli_already_installed(
-        self, mock_which, mock_run, installer, claude_code_agent
+        self, mock_installer_cls, installer, claude_code_agent
     ):
         """Test detection of already installed server.
 
         Verifies that without --force flag, installation fails when
         mcp-skillset is already installed.
         """
-        # Mock CLI available
-        mock_which.return_value = "/usr/local/bin/claude"
-
-        # Mock 'get' command returning success (server exists)
-        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+        # Mock MCPInstaller instance
+        mock_installer = Mock()
+        mock_installer.install_server.return_value = Mock(
+            success=False,
+            message="Server 'mcp-skillset' already installed",
+            config_path=None,
+        )
+        mock_installer_cls.return_value = mock_installer
 
         # Install without force
         result = installer.install(claude_code_agent, force=False)
@@ -475,70 +278,54 @@ class TestClaudeCLIIntegration:
         assert not result.success
         assert result.error is not None
         assert "already installed" in result.error
-        assert "--force" in result.error
 
-        # Verify 'get' command was called
-        call_args = mock_run.call_args[0][0]
-        assert "claude" in call_args
-        assert "mcp" in call_args
-        assert "get" in call_args
-        assert "mcp-skillset" in call_args
-
-    @patch("subprocess.run")
-    @patch("shutil.which")
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
     def test_claude_cli_force_reinstall(
-        self, mock_which, mock_run, installer, claude_code_agent
+        self, mock_installer_cls, installer, claude_code_agent
     ):
         """Test force reinstall workflow.
 
-        Verifies that with --force flag, installation removes existing
-        server and adds it again.
+        Verifies that with --force flag, installation uninstalls existing
+        server and installs it again.
         """
-        # Mock CLI available
-        mock_which.return_value = "/usr/local/bin/claude"
-
-        # Mock successful CLI commands
-        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+        # Mock MCPInstaller instance
+        mock_installer = Mock()
+        mock_installer.uninstall_server.return_value = Mock(success=True)
+        mock_installer.install_server.return_value = Mock(
+            success=True,
+            message="Reinstalled successfully",
+            config_path=claude_code_agent.config_path,
+        )
+        mock_installer_cls.return_value = mock_installer
 
         # Install with force
         result = installer.install(claude_code_agent, force=True)
 
         # Verify success
         assert result.success
-        assert "Claude CLI" in result.changes_made
+        assert result.changes_made == "Reinstalled successfully"
 
-        # Verify both remove and add commands were called
-        assert mock_run.call_count >= 2
+        # Verify both uninstall and install were called
+        mock_installer.uninstall_server.assert_called_once_with("mcp-skillset")
+        mock_installer.install_server.assert_called_once()
 
-        # Check remove command
-        remove_call = mock_run.call_args_list[0][0][0]
-        assert "claude" in remove_call
-        assert "mcp" in remove_call
-        assert "remove" in remove_call
-        assert "mcp-skillset" in remove_call
-
-        # Check add command
-        add_call = mock_run.call_args_list[1][0][0]
-        assert "claude" in add_call
-        assert "mcp" in add_call
-        assert "add" in add_call
-        assert "mcp-skillset" in add_call
-
-    @patch("subprocess.run")
-    @patch("shutil.which")
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
     def test_claude_cli_dry_run(
-        self, mock_which, mock_run, installer, claude_code_agent
+        self, mock_installer_cls, installer, claude_code_agent
     ):
         """Test dry-run mode.
 
         Verifies that dry-run mode shows what would be done without
         actually making any changes.
         """
-        # Mock CLI available
-        mock_which.return_value = "/usr/local/bin/claude"
-
-        # Mock get command failure (server doesn't exist)
-        mock_run.return_value = Mock(returncode=1, stdout="", stderr="Not found")
+        # Mock MCPInstaller instance with dry_run=True
+        mock_installer = Mock()
+        mock_installer.install_server.return_value = Mock(
+            success=True,
+            message="[DRY RUN] Would install mcp-skillset",
+            config_path=claude_code_agent.config_path,
+        )
+        mock_installer_cls.return_value = mock_installer
 
         # Install in dry-run mode
         result = installer.install(claude_code_agent, dry_run=True)
@@ -546,59 +333,60 @@ class TestClaudeCLIIntegration:
         # Verify success but no actual execution
         assert result.success
         assert result.changes_made is not None
-        assert "[DRY RUN]" in result.changes_made
-        assert "claude mcp add" in result.changes_made
-        assert "mcp-skillset" in result.changes_made
+        assert "DRY RUN" in result.changes_made or "Would install" in result.changes_made
 
-        # Verify only get was called (to check if installed), not add/remove
-        assert mock_run.call_count == 1
-        call_args = mock_run.call_args[0][0]
-        assert "get" in call_args
+        # Verify MCPInstaller was created with dry_run=True
+        call_kwargs = mock_installer_cls.call_args[1]
+        assert call_kwargs["dry_run"] is True
 
-    @patch("subprocess.run")
-    @patch("shutil.which")
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
     def test_claude_cli_dry_run_with_force(
-        self, mock_which, mock_run, installer, claude_code_agent
+        self, mock_installer_cls, installer, claude_code_agent
     ):
         """Test dry-run mode with force flag.
 
-        Verifies that dry-run mode shows both remove and add commands
-        when force flag is used.
+        Verifies that dry-run mode with force shows uninstall/install workflow
+        without making actual changes.
         """
-        # Mock CLI available
-        mock_which.return_value = "/usr/local/bin/claude"
+        # Mock MCPInstaller instance with dry_run=True
+        mock_installer = Mock()
+        mock_installer.install_server.return_value = Mock(
+            success=True,
+            message="[DRY RUN] Would reinstall mcp-skillset",
+            config_path=claude_code_agent.config_path,
+        )
+        mock_installer_cls.return_value = mock_installer
 
         # Install in dry-run mode with force
         result = installer.install(claude_code_agent, dry_run=True, force=True)
 
         # Verify success
         assert result.success
-        assert "[DRY RUN]" in result.changes_made
-        assert "remove" in result.changes_made
-        assert "add" in result.changes_made
+        assert "DRY RUN" in result.changes_made or "Would reinstall" in result.changes_made
 
-        # Verify NO subprocess calls
-        assert not mock_run.called
+        # Verify MCPInstaller was created with dry_run=True
+        call_kwargs = mock_installer_cls.call_args[1]
+        assert call_kwargs["dry_run"] is True
 
-    @patch("subprocess.run")
-    @patch("shutil.which")
+        # In dry_run mode, uninstall should NOT be called
+        mock_installer.uninstall_server.assert_not_called()
+
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
     def test_claude_cli_add_command_fails(
-        self, mock_which, mock_run, installer, claude_code_agent
+        self, mock_installer_cls, installer, claude_code_agent
     ):
-        """Test handling of failed add command.
+        """Test handling of failed installation.
 
-        Verifies that installation fails gracefully when the CLI
-        add command returns an error.
+        Verifies that installation fails gracefully when py-mcp-installer
+        returns an error.
         """
-        # Mock CLI available
-        mock_which.return_value = "/usr/local/bin/claude"
-
-        # Mock failed add command
-        mock_run.return_value = Mock(
-            returncode=1,
-            stdout="",
-            stderr="Error: Failed to add MCP server",
+        # Mock MCPInstaller instance
+        from mcp_skills.services.py_mcp_installer_wrapper import PyMCPInstallerError
+        mock_installer = Mock()
+        mock_installer.install_server.side_effect = PyMCPInstallerError(
+            "Failed to install server"
         )
+        mock_installer_cls.return_value = mock_installer
 
         # Install
         result = installer.install(claude_code_agent)
@@ -606,102 +394,104 @@ class TestClaudeCLIIntegration:
         # Verify failure
         assert not result.success
         assert result.error is not None
-        assert "Failed to add" in result.error
-        assert "Error:" in result.error
+        assert "Failed to install" in result.error
 
-    @patch("subprocess.run")
-    @patch("shutil.which")
-    def test_claude_cli_get_command_fails_allows_install(
-        self, mock_which, mock_run, installer, claude_code_agent
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
+    def test_fresh_install_without_force(
+        self, mock_installer_cls, installer, claude_code_agent
     ):
-        """Test that failed 'get' command allows installation.
+        """Test fresh installation without force flag.
 
-        When checking if server exists fails (e.g., server doesn't exist),
-        installation should proceed without force flag.
+        When server doesn't exist, installation should succeed
+        without requiring force flag.
         """
-        # Mock CLI available
-        mock_which.return_value = "/usr/local/bin/claude"
-
-        # Mock get command failure (server doesn't exist), then add success
-        mock_run.side_effect = [
-            Mock(returncode=1, stdout="", stderr="Not found"),  # get fails
-            Mock(returncode=0, stdout="", stderr=""),  # add succeeds
-        ]
+        # Mock MCPInstaller instance
+        mock_installer = Mock()
+        mock_installer.install_server.return_value = Mock(
+            success=True,
+            message="Installed successfully",
+            config_path=claude_code_agent.config_path,
+        )
+        mock_installer_cls.return_value = mock_installer
 
         # Install without force
         result = installer.install(claude_code_agent, force=False)
 
-        # Verify success (should proceed since get failed)
+        # Verify success
         assert result.success
-        assert "Claude CLI" in result.changes_made
+        assert result.changes_made == "Installed successfully"
 
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
     def test_backward_compatibility_claude_desktop(
-        self, installer, claude_desktop_agent, tmp_path
+        self, mock_installer_cls, installer, claude_desktop_agent, tmp_path
     ):
-        """Test backward compatibility with Claude Desktop.
+        """Test that Claude Desktop is handled by py-mcp-installer.
 
-        Verifies that Claude Desktop still uses JSON config file method
-        and NOT the CLI method.
+        Verifies that the adapter correctly delegates Claude Desktop
+        installation to py-mcp-installer.
         """
+        # Mock MCPInstaller instance
+        mock_installer = Mock()
+        mock_installer.install_server.return_value = Mock(
+            success=True,
+            message="Installed successfully",
+            config_path=claude_desktop_agent.config_path,
+        )
+        mock_installer_cls.return_value = mock_installer
+
         # Create config directory
         claude_desktop_agent.config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Install for Claude Desktop (should use JSON method)
-        with patch("subprocess.run") as mock_run:
-            result = installer.install(claude_desktop_agent)
+        # Install for Claude Desktop (delegated to py-mcp-installer)
+        result = installer.install(claude_desktop_agent)
 
-            # Verify subprocess was NOT called (JSON method doesn't use subprocess)
-            assert not mock_run.called
-
-        # Verify config file was created (JSON method)
+        # Verify success
         assert result.success
-        assert claude_desktop_agent.config_path.exists()
 
-        # Verify it's valid JSON config
-        with open(claude_desktop_agent.config_path) as f:
-            config = json.load(f)
-        assert "mcpServers" in config
-        assert "mcp-skillset" in config["mcpServers"]
+        # Verify MCPInstaller was created with correct platform
+        call_kwargs = mock_installer_cls.call_args[1]
+        assert "platform" in call_kwargs
 
-    @patch("subprocess.run")
-    @patch("shutil.which")
-    def test_claude_cli_routing_based_on_agent_id(
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
+    def test_platform_routing_based_on_agent_id(
         self,
-        mock_which,
-        mock_run,
+        mock_installer_cls,
         installer,
         claude_code_agent,
         claude_desktop_agent,
-        tmp_path,
     ):
-        """Test that installation method is routed based on agent ID.
+        """Test that installation is routed to correct platform.
 
-        Verifies that:
-        - claude-code uses CLI method
-        - claude-desktop uses JSON method
+        Verifies that agent IDs are correctly mapped to Platform enums.
         """
-        # Setup for CLI test
-        mock_which.return_value = "/usr/local/bin/claude"
+        # Mock MCPInstaller instance
+        mock_installer = Mock()
+        mock_installer.install_server.return_value = Mock(
+            success=True,
+            message="Installed successfully",
+            config_path=claude_code_agent.config_path,
+        )
+        mock_installer_cls.return_value = mock_installer
 
-        # Mock get command failure (server doesn't exist), then add success
-        mock_run.side_effect = [
-            Mock(returncode=1, stdout="", stderr="Not found"),  # get fails
-            Mock(returncode=0, stdout="", stderr=""),  # add succeeds
-        ]
-
-        # Install Claude Code (should use CLI)
+        # Install Claude Code
         result_code = installer.install(claude_code_agent)
         assert result_code.success
-        assert mock_run.call_count == 2  # get + add
+
+        # Verify platform was set correctly
+        first_call_kwargs = mock_installer_cls.call_args_list[0][1]
+        assert "platform" in first_call_kwargs
 
         # Reset mocks
-        mock_run.reset_mock()
+        mock_installer_cls.reset_mock()
+        mock_installer.install_server.reset_mock()
 
-        # Install Claude Desktop (should NOT use CLI)
-        claude_desktop_agent.config_path.parent.mkdir(parents=True, exist_ok=True)
+        # Install Claude Desktop
         result_desktop = installer.install(claude_desktop_agent)
         assert result_desktop.success
-        assert not mock_run.called  # JSON method doesn't call subprocess
+
+        # Verify platform was set correctly
+        second_call_kwargs = mock_installer_cls.call_args_list[0][1]
+        assert "platform" in second_call_kwargs
 
 
 class TestCrossPlatformPaths:
@@ -830,3 +620,96 @@ class TestAgentNameDetection:
             elif agent.id == "auggie":
                 assert agent.name == "Auggie"
                 assert "Auggie" in str(agent.config_path)
+
+
+class TestNewPlatforms:
+    """Test suite for new platform support (8 platforms total)."""
+
+    @pytest.mark.parametrize(
+        "platform_id,platform_name",
+        [
+            ("cursor", "Cursor"),
+            ("windsurf", "Windsurf"),
+            ("continue", "Continue"),
+            ("codex", "Codex"),
+            ("gemini-cli", "Gemini CLI"),
+        ],
+    )
+    def test_detect_new_platform(self, platform_id, platform_name):
+        """Test detection of new platforms."""
+        detector = AgentDetector()
+        agent = detector.detect_agent(platform_id)
+
+        assert agent is not None
+        assert agent.name == platform_name
+        assert agent.id == platform_id
+        assert isinstance(agent.config_path, Path)
+        assert agent.config_path.is_absolute()
+
+    def test_all_eight_platforms_detected(self):
+        """Test that all 8 platforms are detected."""
+        detector = AgentDetector()
+        agents = detector.detect_all()
+
+        expected_ids = {
+            "claude-desktop",
+            "claude-code",
+            "auggie",
+            "cursor",
+            "windsurf",
+            "continue",
+            "codex",
+            "gemini-cli",
+        }
+
+        detected_ids = {agent.id for agent in agents}
+
+        # Verify all expected platforms are present
+        assert expected_ids.issubset(detected_ids)
+        assert len(agents) == 8
+
+    @patch("mcp_skills.services.agent_installer.MCPInstaller")
+    def test_new_platform_installation(self, mock_installer_cls):
+        """Test installation for new platforms."""
+        detector = AgentDetector()
+        installer = AgentInstaller()
+
+        # Test Cursor platform
+        cursor_agent = detector.detect_agent("cursor")
+        assert cursor_agent is not None
+
+        # Mock successful installation
+        mock_installer = Mock()
+        mock_installer.install_server.return_value = Mock(
+            success=True,
+            message="Installed successfully",
+            config_path=cursor_agent.config_path,
+        )
+        mock_installer_cls.return_value = mock_installer
+
+        result = installer.install(cursor_agent)
+
+        assert result.success
+        assert result.agent_name == "Cursor"
+        assert result.agent_id == "cursor"
+
+    def test_new_platform_config_paths(self):
+        """Test that new platforms have valid config paths."""
+        detector = AgentDetector()
+
+        # Map platform IDs to expected directory names
+        platform_dirs = {
+            "cursor": ".cursor",
+            "windsurf": ".codeium/windsurf",
+            "continue": ".continue",
+            "codex": ".codex",
+            "gemini-cli": ".gemini",
+        }
+
+        for platform_id, expected_dir in platform_dirs.items():
+            agent = detector.detect_agent(platform_id)
+            assert agent is not None
+            assert agent.config_path.is_absolute()
+            # Config path should contain platform-specific directory
+            config_path_str = str(agent.config_path)
+            assert expected_dir in config_path_str, f"Expected '{expected_dir}' in {config_path_str}"

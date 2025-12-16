@@ -1,7 +1,8 @@
 """AI Agent Detection Module.
 
-Detects installed AI agents (Claude Desktop, Claude Code, Auggie) by checking
-for their configuration files in platform-specific directories.
+Detects installed AI agents (Claude Desktop, Claude Code, Auggie, Cursor,
+Windsurf, Continue, Codex, Gemini CLI) by checking for their configuration
+files in platform-specific directories.
 
 Design Decision: Cross-platform path detection with environment variable support
 
@@ -110,6 +111,76 @@ AGENT_CONFIGS = [
             "linux": Path.home() / ".config" / "Auggie",
         },
         config_file="config.json",
+    ),
+    AgentConfig(
+        name="Cursor",
+        id="cursor",
+        config_paths={
+            "darwin": Path.home() / ".cursor",
+            "win32": (
+                Path.home() / ".cursor"
+                if platform.system() == "Windows"
+                else Path()
+            ),
+            "linux": Path.home() / ".cursor",
+        },
+        config_file="mcp.json",
+    ),
+    AgentConfig(
+        name="Windsurf",
+        id="windsurf",
+        config_paths={
+            "darwin": Path.home() / ".codeium" / "windsurf",
+            "win32": (
+                Path.home() / ".codeium" / "windsurf"
+                if platform.system() == "Windows"
+                else Path()
+            ),
+            "linux": Path.home() / ".codeium" / "windsurf",
+        },
+        config_file="mcp_config.json",
+    ),
+    AgentConfig(
+        name="Continue",
+        id="continue",
+        config_paths={
+            "darwin": Path.home() / ".continue",
+            "win32": (
+                Path.home() / ".continue"
+                if platform.system() == "Windows"
+                else Path()
+            ),
+            "linux": Path.home() / ".continue",
+        },
+        config_file="config.json",
+    ),
+    AgentConfig(
+        name="Codex",
+        id="codex",
+        config_paths={
+            "darwin": Path.home() / ".codex",
+            "win32": (
+                Path.home() / ".codex"
+                if platform.system() == "Windows"
+                else Path()
+            ),
+            "linux": Path.home() / ".codex",
+        },
+        config_file="config.toml",
+    ),
+    AgentConfig(
+        name="Gemini CLI",
+        id="gemini-cli",
+        config_paths={
+            "darwin": Path.home() / ".gemini",
+            "win32": (
+                Path.home() / ".gemini"
+                if platform.system() == "Windows"
+                else Path()
+            ),
+            "linux": Path.home() / ".gemini",
+        },
+        config_file="settings.json",
     ),
 ]
 

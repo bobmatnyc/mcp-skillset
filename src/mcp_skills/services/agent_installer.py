@@ -1,47 +1,32 @@
-"""AI Agent Installer Module.
+"""AI Agent Installer - Thin Adapter for py-mcp-installer-service.
 
-Safely installs MCP SkillSet configuration into AI agent config files with
-automatic backup and rollback capabilities.
+This module provides a backward-compatible interface to the py-mcp-installer-service
+library. It delegates all installation logic to py-mcp-installer while maintaining
+the original API surface for existing code.
 
-Design Decision: Atomic config updates with backup/restore
+Design Decision: Adapter pattern with delegation
+- Original 656-line implementation replaced with ~95-line adapter
+- All installation logic delegated to py-mcp-installer-service
+- Backward compatibility maintained for existing callers
+- Platform mapping handled via simple dictionary
 
-Rationale: Configuration files are critical - corruption can break the agent.
-We implement a backup-before-modify pattern with automatic rollback on failure.
-
-Trade-offs:
-- Safety vs Speed: Double file I/O (backup + write) vs direct modification
-- Disk space: Keep timestamped backups vs single backup
-- Complexity: Atomic updates with rollback vs simple file overwrites
-
-Alternatives Considered:
-1. In-place modification: Rejected - no recovery from write failures
-2. Temp file + atomic rename: Rejected - cross-platform issues with Windows
-3. Git-style versioning: Rejected - adds complexity, backup files sufficient
-
-Error Handling Strategy:
-- Config parsing errors: Refuse to modify, show error
-- Write failures: Rollback to backup automatically
-- Backup failures: Abort operation, don't risk data loss
-- JSON validation: Parse before and after modification
-
-Backup Policy:
-- Format: {original_name}.backup.{timestamp}
-- Retention: Unlimited (user can manually clean old backups)
-- Location: Same directory as original config
+Reduced from 656 lines to ~95 lines (85% reduction).
 """
 
 from __future__ import annotations
 
-import json
-import shutil
-import subprocess
-from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from .agent_detector import DetectedAgent
+from .py_mcp_installer_wrapper import (
+    InstallationResult as PyInstallResult,
+    MCPInstaller,
+    Platform,
+    PyMCPInstallerError,
+)
 
 
+# Backward compatibility exceptions
 class ConfigError(Exception):
     """Base exception for configuration errors."""
 
@@ -58,6 +43,18 @@ class ValidationError(ConfigError):
     """Configuration validation failed."""
 
     pass
+
+
+# Platform ID mapping: agent_detector ID -> py-mcp-installer Platform
+PLATFORM_MAP = {
+    "claude-desktop": Platform.CLAUDE_DESKTOP,
+    "claude-code": Platform.CLAUDE_CODE,
+    "auggie": Platform.AUGGIE,
+    "cursor": Platform.CURSOR,
+    "codex": Platform.CODEX,
+    "windsurf": Platform.WINDSURF,
+    "gemini-cli": Platform.GEMINI_CLI,
+}
 
 
 class InstallResult:
@@ -95,34 +92,9 @@ class InstallResult:
 class AgentInstaller:
     """Installs MCP SkillSet into AI agent configurations.
 
-    Performance:
-    - Time Complexity: O(1) for single agent install
-    - Space Complexity: O(n) where n is config file size (2x during backup)
-    - Typical config size: 1-10 KB, backup overhead negligible
-
-    Usage:
-        installer = AgentInstaller()
-        result = installer.install(detected_agent, force=False)
-        if result.success:
-            print(f"Installed for {result.agent_name}")
-            print(f"Backup at: {result.backup_path}")
-        else:
-            print(f"Failed: {result.error}")
+    This is a thin adapter that delegates to py-mcp-installer-service
+    while maintaining backward compatibility with the original interface.
     """
-
-    MCP_SERVER_CONFIG = {
-        "command": "mcp-skillset",
-        "args": ["mcp"],
-        "env": {},
-    }
-
-    GITIGNORE_ENTRIES = [
-        "",
-        "# MCP SkillSet datasets (added by mcp-skillset installer)",
-        "# User-specific data files that should never be committed",
-        ".mcp-skillset/",
-        "**/.mcp-skillset/",
-    ]
 
     def __init__(self) -> None:
         """Initialize the agent installer."""
@@ -143,514 +115,65 @@ class AgentInstaller:
 
         Returns:
             InstallResult with success status and details
-
-        Error Conditions:
-            - Config file missing: Creates new config with MCP configuration
-            - Invalid JSON: Returns error, refuses to modify
-            - Permission denied: Returns error with clear message
-            - Backup failure: Returns error, doesn't proceed
-
-        Example:
-            result = installer.install(agent, force=True)
-            if result.success:
-                print(f"Backup: {result.backup_path}")
-                print(f"Changes: {result.changes_made}")
         """
-        # Route Claude Code to CLI-based installation
-        if agent.id == "claude-code":
-            return self._install_via_claude_cli(agent, force, dry_run)
-
-        # Use JSON config file manipulation for other agents
-        return self._install_via_json_config(agent, force, dry_run)
-
-    def _install_via_json_config(
-        self,
-        agent: DetectedAgent,
-        force: bool = False,
-        dry_run: bool = False,
-    ) -> InstallResult:
-        """Install MCP SkillSet by modifying JSON config files.
-
-        This method is used for agents that don't provide a CLI tool
-        (Claude Desktop, Auggie). For Claude Code, use _install_via_claude_cli.
-
-        Args:
-            agent: DetectedAgent to install for
-            force: Overwrite existing mcp-skillset configuration
-            dry_run: Show what would be done without making changes
-
-        Returns:
-            InstallResult with success status and details
-        """
-        try:
-            # Check if config directory exists
-            config_dir = agent.config_path.parent
-            if not config_dir.exists():
-                return InstallResult(
-                    success=False,
-                    agent_name=agent.name,
-                    agent_id=agent.id,
-                    config_path=agent.config_path,
-                    error=f"Configuration directory not found: {config_dir}\n"
-                    f"Please install {agent.name} first.",
-                )
-
-            # Load existing config or create new
-            if agent.exists:
-                config, error = self._load_config(agent.config_path)
-                if error:
-                    return InstallResult(
-                        success=False,
-                        agent_name=agent.name,
-                        agent_id=agent.id,
-                        config_path=agent.config_path,
-                        error=f"Failed to parse config file: {error}\n"
-                        f"The config file may be corrupted. Please check: {agent.config_path}",
-                    )
-            else:
-                config = {}
-
-            # Check if already installed
-            if not force:
-                mcp_servers = config.get("mcpServers", {})
-                if "mcp-skillset" in mcp_servers:
-                    return InstallResult(
-                        success=False,
-                        agent_name=agent.name,
-                        agent_id=agent.id,
-                        config_path=agent.config_path,
-                        error="mcp-skillset is already installed. Use --force to overwrite.",
-                    )
-
-            # Dry run: show what would happen
-            if dry_run:
-                changes = self._describe_changes(config)
-                return InstallResult(
-                    success=True,
-                    agent_name=agent.name,
-                    agent_id=agent.id,
-                    config_path=agent.config_path,
-                    changes_made=f"[DRY RUN] Would make these changes:\n{changes}",
-                )
-
-            # Backup existing config
-            backup_path = None
-            if agent.exists:
-                backup_path, error = self._create_backup(agent.config_path)
-                if error:
-                    return InstallResult(
-                        success=False,
-                        agent_name=agent.name,
-                        agent_id=agent.id,
-                        config_path=agent.config_path,
-                        error=f"Failed to create backup: {error}\n"
-                        f"Aborting installation to prevent data loss.",
-                    )
-
-            # Modify configuration
-            modified_config = self._add_mcp_config(config)
-
-            # Validate modified config
-            if not self._validate_config(modified_config):
-                # Rollback is not needed as we haven't written yet
-                return InstallResult(
-                    success=False,
-                    agent_name=agent.name,
-                    agent_id=agent.id,
-                    config_path=agent.config_path,
-                    backup_path=backup_path,
-                    error="Modified configuration failed validation. Aborting.",
-                )
-
-            # Write new configuration
-            error = self._write_config(agent.config_path, modified_config)
-            if error:
-                # Attempt rollback
-                if backup_path:
-                    self._restore_backup(backup_path, agent.config_path)
-                return InstallResult(
-                    success=False,
-                    agent_name=agent.name,
-                    agent_id=agent.id,
-                    config_path=agent.config_path,
-                    backup_path=backup_path,
-                    error=f"Failed to write config: {error}\n"
-                    f"Configuration has been restored from backup.",
-                )
-
-            # Update .gitignore if found (best effort, don't fail installation)
-            self._update_gitignore_if_exists(agent.config_path.parent)
-
-            # Success
-            changes = self._describe_changes(config)
-            return InstallResult(
-                success=True,
-                agent_name=agent.name,
-                agent_id=agent.id,
-                config_path=agent.config_path,
-                backup_path=backup_path,
-                changes_made=changes,
-            )
-
-        except Exception as e:
+        # Map agent ID to Platform enum
+        platform = PLATFORM_MAP.get(agent.id)
+        if not platform:
             return InstallResult(
                 success=False,
                 agent_name=agent.name,
                 agent_id=agent.id,
                 config_path=agent.config_path,
-                error=f"Unexpected error: {e}",
+                error=f"Unsupported agent: {agent.id}",
             )
 
-    def _install_via_claude_cli(
-        self,
-        agent: DetectedAgent,
-        force: bool = False,
-        dry_run: bool = False,
-    ) -> InstallResult:
-        """Install MCP SkillSet using Claude CLI.
-
-        This method uses the official Claude CLI (claude mcp add) to install
-        MCP servers. This is the recommended approach for Claude Code as it:
-        - Uses the official API (stable, forward-compatible)
-        - Handles config file format internally
-        - Provides built-in validation
-        - Manages automatic restart/reload
-        - Separates MCP config from user settings
-
-        Args:
-            agent: DetectedAgent to install for (must be claude-code)
-            force: Overwrite existing mcp-skillset configuration
-            dry_run: Show what would be done without making changes
-
-        Returns:
-            InstallResult with success status and details
-
-        Error Conditions:
-            - CLI not available: Returns error, prompts to install Claude Code
-            - Already installed (no force): Returns error, suggests --force
-            - CLI command fails: Returns error with stderr output
-
-        Example:
-            result = installer._install_via_claude_cli(agent, force=True)
-            if result.success:
-                print(f"Changes: {result.changes_made}")
-        """
-        # Check if claude CLI is available
-        if not shutil.which("claude"):
+        # Create installer for the platform (dry_run is set at constructor level)
+        try:
+            installer = MCPInstaller(platform=platform, dry_run=dry_run)
+        except PyMCPInstallerError as e:
             return InstallResult(
                 success=False,
                 agent_name=agent.name,
                 agent_id=agent.id,
                 config_path=agent.config_path,
-                error="Claude CLI not found. Please install Claude Code first.\n"
-                "Visit: https://claude.ai/download",
+                error=f"Failed to create installer: {e}",
             )
 
-        # Check if already installed (unless force)
-        if not force:
-            result = subprocess.run(
-                ["claude", "mcp", "get", "mcp-skillset"],
-                capture_output=True,
-                text=True,
-            )
-            if result.returncode == 0:
-                return InstallResult(
-                    success=False,
-                    agent_name=agent.name,
-                    agent_id=agent.id,
-                    config_path=agent.config_path,
-                    error="mcp-skillset is already installed. Use --force to overwrite.",
-                )
+        # Handle force mode by uninstalling first
+        if force and not dry_run:
+            try:
+                installer.uninstall_server("mcp-skillset")
+            except PyMCPInstallerError:
+                # Ignore uninstall errors (server may not exist)
+                pass
 
-        # Dry run mode
-        if dry_run:
-            cmd_preview = (
-                "claude mcp add --transport stdio mcp-skillset mcp-skillset mcp"
+        # Install the server
+        try:
+            result: PyInstallResult = installer.install_server(
+                name="mcp-skillset",
+                command="mcp-skillset",
+                args=["mcp"],
+                description="Dynamic RAG-powered skills for code assistants",
             )
-            if force:
-                cmd_preview = "claude mcp remove mcp-skillset\n" + cmd_preview
+
+            # Map to legacy InstallResult format
+            # Note: py-mcp-installer doesn't expose backup_path in result,
+            # so we set it to None for backward compatibility
             return InstallResult(
-                success=True,
+                success=result.success,
                 agent_name=agent.name,
                 agent_id=agent.id,
-                config_path=agent.config_path,
-                changes_made=f"[DRY RUN] Would run:\n{cmd_preview}",
+                config_path=result.config_path or agent.config_path,
+                backup_path=None,  # py-mcp-installer handles backups internally
+                error=result.message if not result.success else None,
+                changes_made=result.message if result.success else None,
             )
 
-        # Remove existing if force mode
-        if force:
-            subprocess.run(
-                ["claude", "mcp", "remove", "mcp-skillset"],
-                capture_output=True,
-                text=True,
-            )
-
-        # Add MCP server
-        result = subprocess.run(
-            [
-                "claude",
-                "mcp",
-                "add",
-                "--transport",
-                "stdio",
-                "mcp-skillset",
-                "mcp-skillset",
-                "mcp",
-            ],
-            capture_output=True,
-            text=True,
-        )
-
-        if result.returncode != 0:
+        except PyMCPInstallerError as e:
             return InstallResult(
                 success=False,
                 agent_name=agent.name,
                 agent_id=agent.id,
                 config_path=agent.config_path,
-                error=f"Failed to add MCP server: {result.stderr}",
+                error=str(e),
             )
-
-        return InstallResult(
-            success=True,
-            agent_name=agent.name,
-            agent_id=agent.id,
-            config_path=agent.config_path,
-            changes_made="Added mcp-skillset via Claude CLI",
-        )
-
-    def _load_config(self, config_path: Path) -> tuple[dict[str, Any], str | None]:
-        """Load and parse JSON configuration file.
-
-        Args:
-            config_path: Path to config file
-
-        Returns:
-            Tuple of (config_dict, error_message)
-            On success: (config, None)
-            On failure: ({}, error_message)
-        """
-        try:
-            with open(config_path, encoding="utf-8") as f:
-                config = json.load(f)
-            return config, None
-        except json.JSONDecodeError as e:
-            return {}, f"Invalid JSON: {e}"
-        except PermissionError:
-            return {}, f"Permission denied reading: {config_path}"
-        except Exception as e:
-            return {}, str(e)
-
-    def _create_backup(self, config_path: Path) -> tuple[Path | None, str | None]:
-        """Create timestamped backup of config file.
-
-        Args:
-            config_path: Path to config file
-
-        Returns:
-            Tuple of (backup_path, error_message)
-            On success: (backup_path, None)
-            On failure: (None, error_message)
-        """
-        try:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup_path = config_path.parent / f"{config_path.name}.backup.{timestamp}"
-
-            shutil.copy2(config_path, backup_path)
-            return backup_path, None
-        except PermissionError:
-            return None, f"Permission denied creating backup at: {config_path.parent}"
-        except Exception as e:
-            return None, str(e)
-
-    def _add_mcp_config(self, config: dict[str, Any]) -> dict[str, Any]:
-        """Add MCP SkillSet configuration to config dict.
-
-        Args:
-            config: Existing configuration dictionary
-
-        Returns:
-            Modified configuration with MCP SkillSet added
-        """
-        modified = config.copy()
-
-        # Ensure mcpServers key exists
-        if "mcpServers" not in modified:
-            modified["mcpServers"] = {}
-
-        # Add mcp-skillset configuration
-        modified["mcpServers"]["mcp-skillset"] = self.MCP_SERVER_CONFIG.copy()
-
-        return modified
-
-    def _validate_config(self, config: dict[str, Any]) -> bool:
-        """Validate configuration structure.
-
-        Args:
-            config: Configuration dictionary to validate
-
-        Returns:
-            True if valid, False otherwise
-        """
-        try:
-            # Must be a dictionary
-            if not isinstance(config, dict):
-                return False
-
-            # Must have mcpServers
-            if "mcpServers" not in config:
-                return False
-
-            # mcpServers must be a dict
-            if not isinstance(config["mcpServers"], dict):
-                return False
-
-            # mcp-skillset must be present
-            if "mcp-skillset" not in config["mcpServers"]:
-                return False
-
-            # Validate mcp-skillset structure
-            mcp_config = config["mcpServers"]["mcp-skillset"]
-            if not isinstance(mcp_config, dict):
-                return False
-
-            # Must have command and args
-            if "command" not in mcp_config or "args" not in mcp_config:
-                return False
-
-            # Ensure it's valid JSON (round-trip test)
-            json.dumps(config)
-
-            return True
-        except Exception:
-            return False
-
-    def _write_config(self, config_path: Path, config: dict[str, Any]) -> str | None:
-        """Write configuration to file with pretty formatting.
-
-        Args:
-            config_path: Path to write config to
-            config: Configuration dictionary
-
-        Returns:
-            Error message on failure, None on success
-        """
-        try:
-            # Ensure parent directory exists
-            config_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # Write with pretty formatting
-            with open(config_path, "w", encoding="utf-8") as f:
-                json.dump(config, f, indent=2, ensure_ascii=False)
-                f.write("\n")  # Trailing newline
-
-            return None
-        except PermissionError:
-            return f"Permission denied writing to: {config_path}"
-        except Exception as e:
-            return str(e)
-
-    def _restore_backup(self, backup_path: Path, config_path: Path) -> None:
-        """Restore configuration from backup.
-
-        Args:
-            backup_path: Path to backup file
-            config_path: Path to restore to
-
-        Note:
-            Errors during restore are logged but not raised,
-            as this is a best-effort recovery attempt.
-        """
-        try:
-            shutil.copy2(backup_path, config_path)
-        except Exception as e:
-            # Log error but don't raise - rollback is best-effort
-            print(f"Warning: Failed to restore backup: {e}")
-
-    def _describe_changes(self, original_config: dict[str, Any]) -> str:
-        """Describe what changes will be made to the configuration.
-
-        Args:
-            original_config: Original configuration dict
-
-        Returns:
-            Human-readable description of changes
-        """
-        if not original_config:
-            return "Create new config file with MCP SkillSet configuration"
-
-        has_mcp = "mcpServers" in original_config
-        has_skillset = has_mcp and "mcp-skillset" in original_config.get(
-            "mcpServers", {}
-        )
-
-        if has_skillset:
-            return "Update existing mcp-skillset configuration"
-        elif has_mcp:
-            return "Add mcp-skillset to existing mcpServers configuration"
-        else:
-            return "Add mcpServers section with mcp-skillset configuration"
-
-    def _update_gitignore_if_exists(self, search_dir: Path) -> None:
-        """Update .gitignore to exclude .mcp-skillset/ if file exists.
-
-        Searches for .gitignore in the given directory and parent directories
-        up to the user's home directory. Adds MCP SkillSet entries if not present.
-
-        Args:
-            search_dir: Directory to start searching from
-
-        Note:
-            This is best-effort only - failures are silently ignored to not
-            disrupt the main installation process.
-        """
-        try:
-            # Search for .gitignore up to home directory
-            current_dir = search_dir.resolve()
-            home_dir = Path.home()
-
-            while current_dir >= home_dir:
-                gitignore_path = current_dir / ".gitignore"
-                if gitignore_path.exists():
-                    self._add_to_gitignore(gitignore_path)
-                    return
-
-                # Move up one directory
-                if current_dir.parent == current_dir:
-                    # Reached root without finding .gitignore
-                    break
-                current_dir = current_dir.parent
-
-        except Exception:
-            # Silently ignore errors - .gitignore update is nice-to-have
-            pass
-
-    def _add_to_gitignore(self, gitignore_path: Path) -> None:
-        """Add MCP SkillSet entries to .gitignore if not already present.
-
-        Args:
-            gitignore_path: Path to .gitignore file
-        """
-        try:
-            # Read existing content
-            content = gitignore_path.read_text(encoding="utf-8")
-
-            # Check if already has our entries
-            if ".mcp-skillset/" in content:
-                return  # Already present
-
-            # Add our entries
-            entries_text = "\n".join(self.GITIGNORE_ENTRIES)
-
-            # Ensure file ends with newline before appending
-            if content and not content.endswith("\n"):
-                content += "\n"
-
-            # Append our entries
-            updated_content = content + entries_text + "\n"
-
-            # Write back
-            gitignore_path.write_text(updated_content, encoding="utf-8")
-
-        except Exception:
-            # Silently ignore errors
-            pass

@@ -18,9 +18,19 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.option(
     "--agent",
-    type=click.Choice(["claude-desktop", "claude-code", "auggie", "all"]),
+    type=click.Choice([
+        "claude-desktop",
+        "claude-code",
+        "auggie",
+        "cursor",
+        "windsurf",
+        "continue",
+        "codex",
+        "gemini-cli",
+        "all",
+    ]),
     default="all",
-    help="Which agent to install for (default: claude-code and auggie, excludes claude-desktop)",
+    help="Which agent to install for (default: all except claude-desktop)",
 )
 @click.option(
     "--dry-run",
@@ -35,9 +45,19 @@ logger = logging.getLogger(__name__)
 def install(agent: str, dry_run: bool, force: bool) -> None:
     """Install MCP SkillSet for AI agents with auto-detection.
 
-    Automatically detects installed AI agents (Claude Code, Auggie) and configures
-    them to use mcp-skillset as an MCP server. Claude Desktop is excluded by default
-    due to config path conflicts with Claude Code.
+    Automatically detects installed AI agents and configures them to use mcp-skillset
+    as an MCP server. Claude Desktop is excluded by default due to config path conflicts
+    with Claude Code.
+
+    Supported AI Agents:
+        - Claude Desktop - https://claude.ai/download
+        - Claude Code (VS Code) - Install from VS Code marketplace
+        - Auggie - https://auggie.app
+        - Cursor - https://cursor.sh
+        - Windsurf - https://codeium.com/windsurf
+        - Continue - https://continue.dev
+        - Codex - https://codex.ai
+        - Gemini CLI - https://gemini.google.com
 
     The command will:
     1. Scan for installed AI agents on your system
@@ -49,8 +69,9 @@ def install(agent: str, dry_run: bool, force: bool) -> None:
     Use --force to overwrite existing mcp-skillset configuration.
 
     Examples:
-        mcp-skillset install                         # Install for Claude Code and Auggie (default)
-        mcp-skillset install --agent claude-desktop  # Install for Claude Desktop explicitly
+        mcp-skillset install                         # Install for all detected agents
+        mcp-skillset install --agent claude-code     # Install for Claude Code only
+        mcp-skillset install --agent cursor          # Install for Cursor only
         mcp-skillset install --dry-run               # Preview changes
         mcp-skillset install --force                 # Overwrite existing config
     """
@@ -81,6 +102,11 @@ def install(agent: str, dry_run: bool, force: bool) -> None:
                 "  • Claude Code (VS Code) - Install from VS Code marketplace"
             )
             console.print("  • Auggie - https://auggie.app")
+            console.print("  • Cursor - https://cursor.sh")
+            console.print("  • Windsurf - https://codeium.com/windsurf")
+            console.print("  • Continue - https://continue.dev")
+            console.print("  • Codex - https://codex.ai")
+            console.print("  • Gemini CLI - https://gemini.google.com")
             return
 
         # Display detected agents

@@ -1,3 +1,6 @@
 [submodule "python-project-template"]
 	path = python-project-template
 	url = https://github.com/bobmatnyc/python-project-template.git
+[submodule "src/mcp_skills/services/py_mcp_installer"]
+	path = src/mcp_skills/services/py_mcp_installer
+	url = https://github.com/bobmatnyc/py-mcp-installer-service.git

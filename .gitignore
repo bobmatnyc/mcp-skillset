@@ -150,3 +150,8 @@ yarn-error.log*
 # Claude MPM agent definitions and configuration
 .claude-mpm/
 .claude/agents/
+
+# Added by Claude MPM /mpm-init
+.claude.json
+.claude/
+.mcp.json

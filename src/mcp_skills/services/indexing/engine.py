@@ -132,12 +132,20 @@ class IndexingEngine:
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
         # Determine graph persistence path
+        # For test isolation: custom storage paths store graph inside their directory
+        # For production: use standard ~/.mcp-skillset/indices/ location
         if config and config.knowledge_graph.persist_path:
             self._graph_path = config.knowledge_graph.persist_path
         else:
-            self._graph_path = (
-                Path.home() / ".mcp-skillset" / "indices" / "knowledge_graph.pkl"
-            )
+            default_storage = Path.home() / ".mcp-skillset" / "chromadb"
+            if self.storage_path == default_storage:
+                # Production: use standard location for backward compatibility
+                self._graph_path = (
+                    Path.home() / ".mcp-skillset" / "indices" / "knowledge_graph.pkl"
+                )
+            else:
+                # Custom/test: store graph inside storage_path for isolation
+                self._graph_path = self.storage_path / "knowledge_graph.pkl"
 
         # Initialize components
         try:

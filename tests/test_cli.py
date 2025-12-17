@@ -23,7 +23,7 @@ class TestCLI:
         result = runner.invoke(cli, ["--version"])
 
         assert result.exit_code == 0
-        assert "0.7.0" in result.output
+        assert "mcp-skillset, version" in result.output
 
     def test_setup_command(self) -> None:
         """Test setup command runs."""

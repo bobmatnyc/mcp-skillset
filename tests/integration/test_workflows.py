@@ -13,13 +13,8 @@ from pathlib import Path
 import pytest
 
 from mcp_skills.mcp.server import configure_services
-from mcp_skills.mcp.tools.skill_tool import (
-    skill_categories,
-    skill_get,
-    skill_recommend,
-    skill_reindex,
-    skill_search,
-)
+from mcp_skills.mcp.tools.find_tool import find
+from mcp_skills.mcp.tools.skill_tool import skill
 from mcp_skills.models.skill import Skill
 from mcp_skills.services.indexing import IndexingEngine
 from mcp_skills.services.repository_manager import RepositoryManager
@@ -261,33 +256,33 @@ class TestMCPServerWorkflow:
         base_dir = populated_repos_dir.parent
         configure_services(base_dir=base_dir, storage_path=temp_storage_dir)
 
-        # 2. Call skill_reindex tool first
-        reindex_result = await skill_reindex(force=True)
+        # 2. Call skill(action="reindex") tool first
+        reindex_result = await skill(action="reindex", force=True)
         assert reindex_result["status"] == "completed"
         assert reindex_result["indexed_count"] >= 3
         assert reindex_result["graph_nodes"] >= 3
 
-        # 3. Call skill_search tool
-        search_result = await skill_search(query="python testing", limit=5)
+        # 3. Call find() tool (default semantic search)
+        search_result = await find(query="python testing", limit=5)
         assert search_result["status"] == "completed"
         assert "skills" in search_result
         assert len(search_result["skills"]) > 0
         # Verify skill structure
-        skill = search_result["skills"][0]
-        assert "id" in skill
-        assert "name" in skill
-        assert "description" in skill
-        assert "score" in skill
+        skill_result = search_result["skills"][0]
+        assert "id" in skill_result
+        assert "name" in skill_result
+        assert "description" in skill_result
+        assert "score" in skill_result
 
-        # 4. Call skill_get tool
+        # 4. Call skill(action="read") tool
         skill_id = search_result["skills"][0]["id"]
-        get_result = await skill_get(skill_id=skill_id)
+        get_result = await skill(action="read", skill_id=skill_id)
         assert get_result["status"] == "completed"
         assert get_result["skill"]["id"] == skill_id
         assert "instructions" in get_result["skill"]
 
-        # 5. Call skill_categories tool
-        categories_result = await skill_categories()
+        # 5. Call find(by="category") tool
+        categories_result = await find(by="category")
         assert categories_result["status"] == "completed"
         assert "categories" in categories_result
         assert len(categories_result["categories"]) > 0
@@ -296,9 +291,9 @@ class TestMCPServerWorkflow:
         assert "testing" in category_names
         assert "architecture" in category_names
 
-        # 6. Call skill_recommend tool (with populated repo dir)
-        recommend_result = await skill_recommend(
-            project_path=str(populated_repos_dir), limit=5
+        # 6. Call find(by="recommend") tool (with populated repo dir)
+        recommend_result = await find(
+            by="recommend", project_path=str(populated_repos_dir), limit=5
         )
         assert recommend_result["status"] == "completed"
         assert "recommendations" in recommend_result
@@ -309,16 +304,16 @@ class TestMCPServerWorkflow:
         # All results checked above have correct structure
 
         # 8. Test error handling (invalid inputs)
-        # Test skill_get with non-existent ID
-        error_result = await skill_get(skill_id="invalid/skill/id")
+        # Test skill(action="read") with non-existent ID
+        error_result = await skill(action="read", skill_id="invalid/skill/id")
         assert error_result["status"] == "error"
-        assert "error" in error_result
+        assert "message" in error_result or "error" in error_result
 
-        # Test search with invalid parameters
-        search_error = await skill_search(query="", limit=5)
-        # Empty query should return empty results, not error
-        assert search_error["status"] == "completed"
-        assert len(search_error["skills"]) == 0
+        # Test search with invalid parameters (empty query)
+        search_error = await find(query="", limit=5)
+        # Empty query should return error (query required for semantic search)
+        assert search_error["status"] == "error"
+        assert "error" in search_error or "message" in search_error
 
 
 class TestRepositoryWorkflow:

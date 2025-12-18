@@ -15,7 +15,6 @@ Reduced from 656 lines to ~95 lines (85% reduction).
 
 from __future__ import annotations
 
-import contextlib
 from pathlib import Path
 
 from .agent_detector import DetectedAgent
@@ -142,19 +141,14 @@ class AgentInstaller:
                 error=f"Failed to create installer: {e}",
             )
 
-        # Handle force mode by uninstalling first
-        if force and not dry_run:
-            # Ignore uninstall errors (server may not exist)
-            with contextlib.suppress(PyMCPInstallerError):
-                installer.uninstall_server("mcp-skillset")
-
-        # Install the server
+        # Install the server (force parameter handles updates automatically)
         try:
             result: PyInstallResult = installer.install_server(
                 name="mcp-skillset",
                 command="mcp-skillset",
                 args=["mcp"],
                 description="Dynamic RAG-powered skills for code assistants",
+                force=force,
             )
 
             # Map to legacy InstallResult format

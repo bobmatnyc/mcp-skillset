@@ -229,12 +229,13 @@ class TestClaudeCLIIntegration:
         assert "platform" in call_kwargs
         assert call_kwargs["dry_run"] is False
 
-        # Verify install_server was called
+        # Verify install_server was called with force=False (default)
         mock_installer.install_server.assert_called_once_with(
             name="mcp-skillset",
             command="mcp-skillset",
             args=["mcp"],
             description="Dynamic RAG-powered skills for code assistants",
+            force=False,
         )
 
     @patch("mcp_skills.services.agent_installer.MCPInstaller")
@@ -291,15 +292,14 @@ class TestClaudeCLIIntegration:
     ):
         """Test force reinstall workflow.
 
-        Verifies that with --force flag, installation uninstalls existing
-        server and installs it again.
+        Verifies that with --force flag, installation passes force=True
+        to install_server, which handles update internally.
         """
         # Mock MCPInstaller instance
         mock_installer = Mock()
-        mock_installer.uninstall_server.return_value = Mock(success=True)
         mock_installer.install_server.return_value = Mock(
             success=True,
-            message="Reinstalled successfully",
+            message="Successfully updated 'mcp-skillset'",
             config_path=claude_code_agent.config_path,
         )
         mock_installer_cls.return_value = mock_installer
@@ -309,11 +309,16 @@ class TestClaudeCLIIntegration:
 
         # Verify success
         assert result.success
-        assert result.changes_made == "Reinstalled successfully"
+        assert result.changes_made == "Successfully updated 'mcp-skillset'"
 
-        # Verify both uninstall and install were called
-        mock_installer.uninstall_server.assert_called_once_with("mcp-skillset")
-        mock_installer.install_server.assert_called_once()
+        # Verify install_server was called with force=True
+        mock_installer.install_server.assert_called_once_with(
+            name="mcp-skillset",
+            command="mcp-skillset",
+            args=["mcp"],
+            description="Dynamic RAG-powered skills for code assistants",
+            force=True,
+        )
 
     @patch("mcp_skills.services.agent_installer.MCPInstaller")
     def test_claude_cli_dry_run(self, mock_installer_cls, installer, claude_code_agent):

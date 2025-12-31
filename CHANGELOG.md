@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - 2025-12-31
+
+### Added
+
+#### Auto-Update on MCP Server Startup
+- Skills repositories automatically update when the MCP server starts
+- Checks if repos are older than 24 hours (configurable via `max_age_hours`)
+- Automatically reindexes if skill count changes after update
+- Non-blocking: errors logged but don't prevent server startup
+
+#### Claude Code Hooks Integration
+- New `mcp-skillset enrich-hook` command for `UserPromptSubmit` hooks
+- Automatic skill hints during prompt submission based on semantic search
+- Configurable threshold (default: 0.6) and max skills (default: 5)
+- Brief format: "Skills: skill1, skill2 - use /skill <name> to load"
+- `--with-hooks` flag added to `mcp-skillset install`
+
+#### Hook Settings in Config TUI
+- New "Hook settings" submenu in `mcp-skillset config`
+- Enable/disable hooks
+- Configure similarity threshold
+- Set max skills to suggest
+- Test hook functionality
+
+#### Setup Command Enhancement
+- Added Step 7/7 for optional Claude Code hooks installation
+- Respects `--auto` and `--skip-agents` flags
+
+### Configuration
+
+New configuration options in `~/.mcp-skillset/config.yaml`:
+
+```yaml
+auto_update:
+  enabled: true
+  max_age_hours: 24
+
+hooks:
+  enabled: true
+  threshold: 0.6
+  max_skills: 5
+```
+
+---
+
 ## [0.7.0] - 2025-11-30
 
 ### Changed

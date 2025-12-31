@@ -26,6 +26,7 @@ import click
 from mcp_skills import __version__
 
 # Import all extracted commands
+from mcp_skills.cli.commands.ask import ask
 from mcp_skills.cli.commands.build_skill import build_skill
 from mcp_skills.cli.commands.config import config
 from mcp_skills.cli.commands.demo import demo
@@ -76,6 +77,7 @@ cli.add_command(enrich_hook)
 cli.add_command(config)
 cli.add_command(build_skill)
 cli.add_command(discover)
+cli.add_command(ask)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 import yaml
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 logger = logging.getLogger(__name__)
@@ -272,6 +272,35 @@ class AutoUpdateConfig(BaseSettings):
     )
 
 
+class LLMConfig(BaseSettings):
+    """LLM configuration for ask command.
+
+    Attributes:
+        api_key: OpenRouter API key (can be set via OPENROUTER_API_KEY env var)
+        model: Model to use for chat completions
+        max_tokens: Maximum tokens in response
+    """
+
+    api_key: str | None = Field(None, description="OpenRouter API key")
+    model: str = Field(
+        "anthropic/claude-3-haiku",
+        description="Model to use for chat completions",
+    )
+    max_tokens: int = Field(
+        1024,
+        ge=100,
+        le=4096,
+        description="Maximum response tokens",
+    )
+
+    model_config = SettingsConfigDict(
+        env_prefix="OPENROUTER_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
 class MCPSkillsConfig(BaseSettings):
     """Main mcp-skillset configuration.
 
@@ -332,6 +361,12 @@ class MCPSkillsConfig(BaseSettings):
     auto_update: AutoUpdateConfig = Field(
         default_factory=AutoUpdateConfig,
         description="Auto-update config for repository maintenance",
+    )
+
+    # LLM configuration
+    llm: LLMConfig = Field(
+        default_factory=LLMConfig,
+        description="LLM config for ask command",
     )
 
     class Config:

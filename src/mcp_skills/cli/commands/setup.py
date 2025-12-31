@@ -18,6 +18,7 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 
+from mcp_skills.cli.commands.install import _install_hooks
 from mcp_skills.models.repository import Repository
 from mcp_skills.services.agent_detector import AgentDetector
 from mcp_skills.services.agent_installer import AgentInstaller
@@ -63,6 +64,7 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
     4. Configure MCP server
     5. Validate setup
     6. Install for AI agents (Claude Code, Auggie by default; excludes Claude Desktop)
+    7. Optionally install Claude Code hooks for automatic skill hints
     """
     console.print("🚀 [bold green]Starting mcp-skillset setup...[/bold green]")
     console.print(f"📁 Project directory: {project_dir}")
@@ -70,7 +72,7 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
 
     try:
         # 1. Toolchain detection
-        console.print("[bold cyan]Step 1/6:[/bold cyan] Detecting project toolchain...")
+        console.print("[bold cyan]Step 1/7:[/bold cyan] Detecting project toolchain...")
         detector = ToolchainDetector()
         project_path = Path(project_dir).resolve()
         toolchain = detector.detect(project_path)
@@ -88,7 +90,7 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
 
         # 2. Repository cloning
         console.print(
-            "[bold cyan]Step 2/6:[/bold cyan] Setting up skill repositories..."
+            "[bold cyan]Step 2/7:[/bold cyan] Setting up skill repositories..."
         )
         repo_manager = RepositoryManager()
 
@@ -179,7 +181,7 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
         console.print()
 
         # 3. Indexing
-        console.print("[bold cyan]Step 3/6:[/bold cyan] Building skill indices...")
+        console.print("[bold cyan]Step 3/7:[/bold cyan] Building skill indices...")
         skill_manager = SkillManager()
         indexing_engine = IndexingEngine(skill_manager=skill_manager)
 
@@ -203,14 +205,14 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
                 logger.error(f"Indexing failed: {e}")
 
         # 4. MCP configuration
-        console.print("[bold cyan]Step 4/6:[/bold cyan] Configuring MCP server...")
+        console.print("[bold cyan]Step 4/7:[/bold cyan] Configuring MCP server...")
         base_dir = Path.home() / ".mcp-skillset"
         console.print(f"  ✓ Base directory: {base_dir}")
         console.print(f"  ✓ ChromaDB: {base_dir / 'chromadb'}")
         console.print(f"  ✓ Repositories: {base_dir / 'repos'}\n")
 
         # 5. Validation
-        console.print("[bold cyan]Step 5/6:[/bold cyan] Validating setup...")
+        console.print("[bold cyan]Step 5/7:[/bold cyan] Validating setup...")
         repos = repo_manager.list_repositories()
         skills = skill_manager.discover_skills()
 
@@ -240,7 +242,7 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
         if not skip_agents:
             console.print()
             console.print(
-                "[bold cyan]Step 6/6:[/bold cyan] Installing for AI agents..."
+                "[bold cyan]Step 6/7:[/bold cyan] Installing for AI agents..."
             )
 
             agent_detector = AgentDetector()
@@ -295,6 +297,41 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
                 "\n[dim]Skipped agent installation (--skip-agents flag)[/dim]"
             )
 
+        # 7. Hook installation (optional)
+        hooks_installed = False
+        if not skip_agents and agents_installed > 0:
+            console.print()
+            console.print(
+                "[bold cyan]Step 7/7:[/bold cyan] Claude Code hooks (optional)..."
+            )
+            console.print(
+                "  Hooks automatically suggest relevant skills when you type prompts."
+            )
+
+            # Ask for confirmation (respect auto flag)
+            should_install_hooks = auto or click.confirm(
+                "\n  Install Claude Code hooks for automatic skill hints?",
+                default=True,
+            )
+
+            if should_install_hooks:
+                try:
+                    if _install_hooks(dry_run=False, force=False):
+                        console.print("  ✓ Hooks installed successfully")
+                        hooks_installed = True
+                    else:
+                        console.print(
+                            "  [dim]Hooks not installed (already configured or Claude Code not found)[/dim]"
+                        )
+                except Exception as e:
+                    console.print(f"  [yellow]⚠ Hook installation failed: {e}[/yellow]")
+                    logger.warning(f"Hook installation failed: {e}")
+            else:
+                console.print("  Skipped hook installation")
+                console.print(
+                    "  [dim]You can install later with: mcp-skillset install --with-hooks[/dim]"
+                )
+
         console.print()
 
         # Summary
@@ -309,6 +346,14 @@ def setup(project_dir: str, config: str, auto: bool, skip_agents: bool) -> None:
                 console.print(
                     "  3. [cyan]Search skills:[/cyan] mcp-skillset search 'python testing'"
                 )
+                if hooks_installed:
+                    console.print(
+                        "  4. [cyan]Skills will be suggested automatically[/cyan] when you type prompts!"
+                    )
+                else:
+                    console.print(
+                        "  4. [cyan]Enable auto-hints:[/cyan] mcp-skillset install --with-hooks"
+                    )
             else:
                 console.print(
                     "  1. [cyan]Install for agents:[/cyan] mcp-skillset install"

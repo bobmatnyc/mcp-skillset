@@ -66,14 +66,19 @@ class TestCLISetupCommand:
         # Verify command succeeded
         assert result.exit_code == 0, f"Setup failed: {result.output}"
 
-        # Verify output contains setup steps (now 6 steps with agent installation)
-        assert "Step 1/6" in result.output
-        assert "Step 2/6" in result.output
-        assert "Step 3/6" in result.output
-        assert "Step 4/6" in result.output
-        assert "Step 5/6" in result.output
+        # Verify output contains setup steps (now 7 steps with agent installation and hooks)
+        assert "Step 1/7" in result.output
+        assert "Step 2/7" in result.output
+        assert "Step 3/7" in result.output
+        assert "Step 4/7" in result.output
+        assert "Step 5/7" in result.output
+        assert "Step 6/7" in result.output
+        # Step 7 (hooks) only appears if agents were successfully installed
+        # Otherwise, setup completes at step 6
         assert (
-            "Step 6/6" in result.output or "Skipped agent installation" in result.output
+            "Step 7/7" in result.output
+            or "Skipped agent installation" in result.output
+            or "Installed for 0/" in result.output
         )
 
         # Verify toolchain detection

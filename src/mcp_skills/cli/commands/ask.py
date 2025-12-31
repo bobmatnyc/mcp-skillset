@@ -106,15 +106,14 @@ def ask(question: tuple[str, ...], no_context: bool, model: str | None) -> None:
                     console.print("[dim]Found relevant skills:[/dim]")
 
                     for r in results:
-                        console.print(f"  • {r.skill_id} (relevance: {r.score:.2f})")
+                        console.print(f"  • {r.skill.id} (relevance: {r.score:.2f})")
 
-                        # Get skill content for context
-                        skill = skill_manager.get_skill(r.skill_id)
-                        if skill and skill.content:
+                        # Use skill instructions from search results for context
+                        if r.skill and r.skill.instructions:
                             # Limit context to 2000 chars per skill to avoid token limits
-                            skill_content = skill.content[:2000]
+                            skill_content = r.skill.instructions[:2000]
                             context_parts.append(
-                                f"## {skill.name}\n{skill_content}"
+                                f"## {r.skill.name}\n{skill_content}"
                             )
 
                     context = "\n\n".join(context_parts)

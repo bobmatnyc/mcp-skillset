@@ -13,6 +13,8 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
+from ..models.config import MCPSkillsConfig
+from ..services.auto_updater import AutoUpdater
 from ..services.indexing import IndexingEngine
 from ..services.repository_manager import RepositoryManager
 from ..services.skill_manager import SkillManager
@@ -61,16 +63,36 @@ def configure_services(
         base_dir.mkdir(parents=True, exist_ok=True)
         storage_path.mkdir(parents=True, exist_ok=True)
 
+        # Load configuration
+        config = MCPSkillsConfig()
+
         # Initialize services
         _repo_manager = RepositoryManager(base_dir / "repos")
         _skill_manager = SkillManager(_repo_manager.base_dir)
         _indexing_engine = IndexingEngine(
             storage_path=storage_path,
             skill_manager=_skill_manager,
+            config=config,
         )
         _toolchain_detector = ToolchainDetector()
 
         logger.info(f"Configured mcp-skillset services at {base_dir}")
+
+        # Auto-update repositories if enabled
+        if config.auto_update.enabled:
+            logger.info("Auto-update enabled, checking repositories...")
+            auto_updater = AutoUpdater(
+                repo_manager=_repo_manager,
+                indexing_engine=_indexing_engine,
+                config=config.auto_update,
+            )
+            # Run auto-update synchronously during startup
+            # This ensures indices are fresh before server accepts requests
+            auto_updater.check_and_update()
+            logger.info("Auto-update check complete")
+        else:
+            logger.info("Auto-update disabled, skipping repository checks")
+
     except Exception as e:
         logger.error(f"Failed to configure services: {e}")
         raise RuntimeError(f"Service configuration failed: {e}") from e

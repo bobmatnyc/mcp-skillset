@@ -253,6 +253,25 @@ class HookConfig(BaseSettings):
     )
 
 
+class AutoUpdateConfig(BaseSettings):
+    """Auto-update configuration for repository maintenance.
+
+    Configures automatic repository updates when MCP server starts.
+
+    Attributes:
+        enabled: Enable auto-update on MCP server startup
+        max_age_hours: Maximum age in hours before repository is considered stale
+    """
+
+    enabled: bool = Field(True, description="Enable auto-update on startup")
+    max_age_hours: int = Field(
+        24,
+        ge=1,
+        le=168,
+        description="Max age in hours before update (1-168 hours, default: 24)",
+    )
+
+
 class MCPSkillsConfig(BaseSettings):
     """Main mcp-skillset configuration.
 
@@ -307,6 +326,12 @@ class MCPSkillsConfig(BaseSettings):
     hooks: HookConfig = Field(
         default_factory=HookConfig,
         description="Claude Code hook enrichment config",
+    )
+
+    # Auto-update configuration
+    auto_update: AutoUpdateConfig = Field(
+        default_factory=AutoUpdateConfig,
+        description="Auto-update config for repository maintenance",
     )
 
     class Config:

@@ -12,7 +12,7 @@ from questionary import Choice
 from rich.console import Console
 from rich.tree import Tree
 
-from mcp_skills.models.config import HybridSearchConfig, MCPSkillsConfig
+from mcp_skills.models.config import HybridSearchConfig, HookConfig, MCPSkillsConfig
 from mcp_skills.services.indexing import IndexingEngine
 from mcp_skills.services.repository_manager import RepositoryManager
 from mcp_skills.services.skill_manager import SkillManager
@@ -54,6 +54,7 @@ class ConfigMenu:
         "Base directory configuration",
         "Search settings (hybrid search weights)",
         "Repository management",
+        "Hook settings (Claude Code integration)",
         "View current configuration",
         "Reset to defaults",
         "Exit",
@@ -73,6 +74,15 @@ class ConfigMenu:
         "Add new repository",
         "Remove repository",
         "Change repository priority",
+        "Back to main menu",
+    ]
+
+    # Hook action choices
+    HOOK_ACTION_CHOICES = [
+        "Enable/disable hooks",
+        "Configure threshold",
+        "Configure max skills",
+        "Test hook",
         "Back to main menu",
     ]
 
@@ -108,10 +118,12 @@ class ConfigMenu:
                 elif choice == self.MAIN_MENU_CHOICES[2]:
                     self._configure_repositories()
                 elif choice == self.MAIN_MENU_CHOICES[3]:
-                    self._view_configuration()
+                    self._configure_hooks()
                 elif choice == self.MAIN_MENU_CHOICES[4]:
-                    self._reset_to_defaults()
+                    self._view_configuration()
                 elif choice == self.MAIN_MENU_CHOICES[5]:
+                    self._reset_to_defaults()
+                elif choice == self.MAIN_MENU_CHOICES[6]:
                     self.running = False
 
                 if self.running:
@@ -442,6 +454,173 @@ class ConfigMenu:
             console.print(f"\n[red]✗[/red] Failed to change priority: {e}")
             logger.error(f"Priority change failed: {e}")
 
+    def _configure_hooks(self) -> None:
+        """Configure Claude Code hook settings.
+
+        Provides submenu for enabling/disabling hooks, setting threshold,
+        and configuring max skills.
+        """
+        console.print("\n[bold]Hook Settings (Claude Code Integration)[/bold]\n")
+
+        # Show current settings
+        hooks_config = getattr(self.config, 'hooks', None)
+        if hooks_config:
+            console.print(f"Current settings:")
+            console.print(f"  • Enabled: [cyan]{hooks_config.enabled}[/cyan]")
+            console.print(f"  • Threshold: [cyan]{hooks_config.threshold}[/cyan]")
+            console.print(f"  • Max skills: [cyan]{hooks_config.max_skills}[/cyan]")
+        else:
+            console.print("[dim]Using defaults (enabled, threshold=0.6, max_skills=5)[/dim]")
+        console.print()
+
+        action = questionary.select(
+            "Choose hook action:",
+            choices=self.HOOK_ACTION_CHOICES,
+        ).ask()
+
+        if action is None:  # User cancelled
+            return
+
+        if action == self.HOOK_ACTION_CHOICES[0]:
+            self._toggle_hooks()
+        elif action == self.HOOK_ACTION_CHOICES[1]:
+            self._configure_hook_threshold()
+        elif action == self.HOOK_ACTION_CHOICES[2]:
+            self._configure_hook_max_skills()
+        elif action == self.HOOK_ACTION_CHOICES[3]:
+            self._test_hook()
+        # "Back to main menu" does nothing, just returns
+
+    def _toggle_hooks(self) -> None:
+        """Toggle hook enabled/disabled state."""
+        hooks_config = getattr(self.config, 'hooks', None)
+        current_enabled = hooks_config.enabled if hooks_config else True
+
+        new_enabled = questionary.confirm(
+            "Enable Claude Code hooks?",
+            default=current_enabled,
+        ).ask()
+
+        if new_enabled is None:  # User cancelled
+            return
+
+        self._save_config({"hooks": {"enabled": new_enabled}})
+
+        # Update in-memory config
+        if not hasattr(self.config, 'hooks') or self.config.hooks is None:
+            self.config.hooks = HookConfig()
+        self.config.hooks.enabled = new_enabled
+
+        status = "[green]enabled[/green]" if new_enabled else "[red]disabled[/red]"
+        console.print(f"\n[green]✓[/green] Hooks {status}")
+
+    def _configure_hook_threshold(self) -> None:
+        """Configure hook similarity threshold."""
+        hooks_config = getattr(self.config, 'hooks', None)
+        current_threshold = hooks_config.threshold if hooks_config else 0.6
+
+        console.print("\n[bold]Hook Threshold Configuration[/bold]")
+        console.print("Higher threshold = fewer but more relevant skill suggestions")
+        console.print("Lower threshold = more suggestions but less precise\n")
+
+        threshold_str = questionary.text(
+            "Enter threshold (0.0-1.0):",
+            default=str(current_threshold),
+            validate=lambda x: self._validate_weight(x),
+        ).ask()
+
+        if threshold_str is None:  # User cancelled
+            return
+
+        threshold = float(threshold_str)
+
+        self._save_config({"hooks": {"threshold": threshold}})
+
+        # Update in-memory config
+        if not hasattr(self.config, 'hooks') or self.config.hooks is None:
+            self.config.hooks = HookConfig()
+        self.config.hooks.threshold = threshold
+
+        console.print(f"\n[green]✓[/green] Threshold set to: {threshold}")
+
+    def _configure_hook_max_skills(self) -> None:
+        """Configure maximum skills to suggest in hooks."""
+        hooks_config = getattr(self.config, 'hooks', None)
+        current_max = hooks_config.max_skills if hooks_config else 5
+
+        console.print("\n[bold]Max Skills Configuration[/bold]")
+        console.print("Maximum number of skills to suggest in hook hints.\n")
+
+        max_skills_str = questionary.text(
+            "Enter max skills (1-10):",
+            default=str(current_max),
+            validate=lambda x: self._validate_max_skills(x),
+        ).ask()
+
+        if max_skills_str is None:  # User cancelled
+            return
+
+        max_skills = int(max_skills_str)
+
+        self._save_config({"hooks": {"max_skills": max_skills}})
+
+        # Update in-memory config
+        if not hasattr(self.config, 'hooks') or self.config.hooks is None:
+            self.config.hooks = HookConfig()
+        self.config.hooks.max_skills = max_skills
+
+        console.print(f"\n[green]✓[/green] Max skills set to: {max_skills}")
+
+    def _test_hook(self) -> None:
+        """Test the hook with a sample prompt."""
+        import json
+        import subprocess
+
+        console.print("\n[bold]Test Hook[/bold]")
+        console.print("Test the enrich-hook command with a sample prompt.\n")
+
+        test_prompt = questionary.text(
+            "Enter test prompt:",
+            default="Write pytest tests for my API",
+        ).ask()
+
+        if test_prompt is None:  # User cancelled
+            return
+
+        console.print("\n[dim]Running enrich-hook...[/dim]")
+
+        try:
+            # Run the enrich-hook command
+            input_data = json.dumps({"user_prompt": test_prompt})
+            result = subprocess.run(
+                ["mcp-skillset", "enrich-hook"],
+                input=input_data,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+
+            if result.returncode == 0:
+                output = json.loads(result.stdout)
+                if output and "systemMessage" in output:
+                    console.print(f"\n[green]✓[/green] Hook response:")
+                    console.print(f"  [cyan]{output['systemMessage']}[/cyan]")
+                else:
+                    console.print("\n[yellow]No matching skills found for this prompt[/yellow]")
+                    console.print("[dim]Try a more specific prompt or lower the threshold[/dim]")
+            else:
+                console.print(f"\n[red]✗[/red] Hook failed: {result.stderr}")
+
+        except subprocess.TimeoutExpired:
+            console.print("\n[red]✗[/red] Hook timed out (>10s)")
+        except FileNotFoundError:
+            console.print("\n[red]✗[/red] mcp-skillset command not found")
+            console.print("[dim]Make sure mcp-skillset is installed: pip install mcp-skillset[/dim]")
+        except json.JSONDecodeError:
+            console.print("\n[red]✗[/red] Invalid JSON response from hook")
+        except Exception as e:
+            console.print(f"\n[red]✗[/red] Test failed: {e}")
+
     def _view_configuration(self) -> None:
         """Display current configuration.
 
@@ -520,6 +699,17 @@ class ConfigMenu:
             search_node.add(
                 f"[green]✓[/green] Graph weight: {self.config.hybrid_search.graph_weight:.1f}"
             )
+
+            # Hook settings
+            hook_node = base_node.add("🪝 Hook Settings")
+            hooks_config = getattr(self.config, 'hooks', None)
+            if hooks_config:
+                status = "[green]enabled[/green]" if hooks_config.enabled else "[red]disabled[/red]"
+                hook_node.add(f"[green]✓[/green] Status: {status}")
+                hook_node.add(f"[green]✓[/green] Threshold: {hooks_config.threshold}")
+                hook_node.add(f"[green]✓[/green] Max skills: {hooks_config.max_skills}")
+            else:
+                hook_node.add("[dim]Using defaults (enabled, 0.6, 5)[/dim]")
 
             console.print(tree)
 
@@ -634,5 +824,23 @@ class ConfigMenu:
             if 0 <= priority <= 100:
                 return True
             return "Priority must be between 0 and 100"
+        except ValueError:
+            return "Please enter a valid integer"
+
+    @staticmethod
+    def _validate_max_skills(value: str) -> bool | str:
+        """Validate max skills input (1-10).
+
+        Args:
+            value: Input string to validate
+
+        Returns:
+            True if valid, error message string if invalid
+        """
+        try:
+            max_skills = int(value)
+            if 1 <= max_skills <= 10:
+                return True
+            return "Max skills must be between 1 and 10"
         except ValueError:
             return "Please enter a valid integer"

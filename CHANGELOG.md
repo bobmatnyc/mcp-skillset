@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.6] - 2025-12-31
+
+### Added
+
+#### LLM-Powered Ask Command
+- New `mcp-skillset ask` command for natural language questions
+- Uses OpenRouter API for LLM responses (Claude 3 Haiku by default)
+- Automatic skill context injection for relevant answers
+- Configurable via environment variable or `.env` file
+- Example: `mcp-skillset ask "How do I write pytest fixtures?"`
+
+#### Skill Update Date Tracking
+- Skills now track `updated_at` timestamp (file modification time)
+- Stored in ChromaDB metadata for querying
+- New `mcp-skillset recent` command to find recently updated skills
+- Options: `--days`, `--since`, `--limit`
+- Example: `mcp-skillset recent --days 30`
+
+### Fixed
+- Multi-agent installation now handles "server already exists" gracefully
+- Installer error logging improved (DEBUG level for non-critical errors)
+- `ask` command attribute access corrected for ScoredSkill results
+
+### Changed
+- Documentation updated to favor `uv` over `pip` for installation
+- CONTRIBUTING.md, README.md, and docs/ aligned with uv-first approach
+
+### Configuration
+
+New LLM configuration options in `~/.mcp-skillset/config.yaml`:
+
+```yaml
+llm:
+  model: anthropic/claude-3-haiku
+  max_tokens: 1024
+```
+
+Or via environment variable:
+```bash
+export OPENROUTER_API_KEY=sk-or-...
+```
+
+---
+
 ## [0.7.5] - 2025-12-31
 
 ### Added

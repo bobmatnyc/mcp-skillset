@@ -141,14 +141,16 @@ class AgentInstaller:
                 error=f"Failed to create installer: {e}",
             )
 
-        # Install the server (force parameter handles updates automatically)
+        # Install the server
+        # Use force=True to update existing servers gracefully when installing
+        # This prevents "Server already exists" errors during multi-agent installs
         try:
             result: PyInstallResult = installer.install_server(
                 name="mcp-skillset",
                 command="mcp-skillset",
                 args=["mcp"],
                 description="Dynamic RAG-powered skills for code assistants",
-                force=force,
+                force=True,  # Always use force to update/skip existing installations
             )
 
             # Map to legacy InstallResult format

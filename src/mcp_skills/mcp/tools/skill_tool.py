@@ -71,33 +71,66 @@ async def skill(
     skill_id: str | None = None,
     force: bool = False,
 ) -> dict[str, Any]:
-    """Perform skill read operations.
+    """Read skill details, view skill instructions and examples, or rebuild search indices for skill discovery.
 
-    Actions:
-    - read: Get complete skill details
-    - reindex: Rebuild search indices
+    This tool provides read access to skill metadata, instructions, examples, and dependencies. Use action="read" to view complete skill details including instructions and code examples. Use action="reindex" to rebuild vector search indices and knowledge graph for updated skill discovery.
+
+    Available Actions:
+    - read: Get complete skill details, view instructions, examples, and metadata
+    - reindex: Rebuild search indices (vector store + knowledge graph) for skill discovery
 
     Note: Write operations (create/update/delete) are available via CLI only.
-    Use `mcp-skillset build-skill` for creating skills.
+    Use `mcp-skillset build-skill` for creating skills, or edit skill files directly for updates.
 
     Args:
-        action: Operation to perform (read|reindex)
-        skill_id: Skill ID for read
-        force: Force reindex even if up-to-date
+        action: Operation to perform - valid values: read, reindex
+        skill_id: Skill ID for read action (required when action="read")
+        force: Force reindex even if indices are up-to-date (optional, default: False)
 
     Returns:
-        Dict with status and result data
+        Dict with status and result data:
+        - For read: Returns skill metadata, instructions, examples, tags, category, toolchain, dependencies
+        - For reindex: Returns indexing statistics (indexed_count, vector_store_size, graph_nodes, graph_edges)
+
+    Common Use Cases:
+        # Get skill details and instructions
+        skill(action="read", skill_id="pytest-skill")
+
+        # View skill examples and code snippets
+        skill(action="read", skill_id="fastapi-testing")
+
+        # Rebuild search index after skill updates
+        skill(action="reindex", force=True)
+
+        # Incremental reindex (only if needed)
+        skill(action="reindex")
 
     Examples:
-        >>> # Read skill
+        >>> # Read skill details
         >>> skill(action="read", skill_id="pytest-skill")
         {
             "status": "completed",
-            "skill": {"id": "pytest-skill", "name": "pytest", ...}
+            "skill": {
+                "id": "pytest-skill",
+                "name": "pytest",
+                "description": "Testing patterns with pytest",
+                "category": "testing",
+                "tags": ["python", "testing", "tdd"],
+                "instructions": "...",
+                "examples": [...]
+            }
         }
 
         >>> # Reindex all skills
         >>> skill(action="reindex", force=True)
+        {
+            "status": "completed",
+            "action": "reindex",
+            "indexed_count": 42,
+            "vector_store_size": 1024,
+            "graph_nodes": 50,
+            "graph_edges": 120
+        }
 
     """
     try:

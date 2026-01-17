@@ -77,10 +77,12 @@ async def find(
     project_path: str | None = None,
     limit: int = 10,
 ) -> dict[str, Any]:
-    """Find skills using semantic search, knowledge graph, or metadata queries.
+    """Find and discover skills using semantic search, knowledge graph recommendations, category browsing, or template queries.
+
+    This unified tool provides semantic search, graph-based discovery, category filtering, template listing, and intelligent skill recommendations for Python, TypeScript, JavaScript, Rust, Go, Java, PHP, and Ruby toolchains. Search across categories including testing, deployment, security, architecture, debugging, refactoring, performance, and best-practices.
 
     Unified discovery tool replacing 4 separate tools with a single entry point.
-    Use the 'by' parameter to select search method.
+    Use the 'by' parameter to select search method: semantic, graph, category, template, or recommend.
 
     Search Methods (by parameter):
     - semantic: Vector + graph hybrid search (default, 70% vector + 30% graph)
@@ -90,8 +92,11 @@ async def find(
     - recommend: Get recommendations based on skill or project
 
     Common Use Cases:
-        # Natural language semantic search
+        # Search for testing skills (semantic)
         find(query="pytest testing patterns", by="semantic", limit=5)
+
+        # Find Python testing skills (semantic + toolchain filter)
+        find(query="testing best practices", by="semantic", toolchain="python")
 
         # Graph-based relationship search
         find(query="security", by="graph", toolchain="python")
@@ -99,26 +104,26 @@ async def find(
         # List all categories
         find(by="category")
 
-        # Search within category
+        # Browse testing category
         find(by="category", category="testing", limit=10)
 
-        # List templates
+        # List templates for skill creation
         find(by="template")
 
-        # Project-based recommendations
+        # Recommend skills for project
         find(by="recommend", project_path="/path/to/project", limit=5)
 
-        # Skill-based recommendations
+        # Recommend related skills
         find(by="recommend", skill_id="pytest-skill", limit=5)
 
     Args:
-        query: Search query for semantic/graph modes
-        by: Search method (semantic|graph|category|template|recommend)
-        toolchain: Filter by toolchain (python, typescript, rust, etc.)
-        category: Filter by category or specify category for category mode
+        query: Search query for semantic/graph modes (natural language or keywords)
+        by: Search method - valid values: semantic, graph, category, template, recommend (default: semantic)
+        toolchain: Filter by toolchain - supported: python, typescript, javascript, rust, go, java, php, ruby
+        category: Filter by category - available: testing, deployment, security, architecture, debugging, refactoring, performance, best-practices
         tags: Filter by tags (AND logic - skills must have all specified tags)
-        skill_id: Base skill ID for recommend mode
-        project_path: Project path for recommend mode
+        skill_id: Base skill ID for recommend mode (finds related skills)
+        project_path: Project path for recommend mode (detects toolchains and recommends skills)
         limit: Maximum results (1-50, default: 10)
 
     Returns:

@@ -10,6 +10,18 @@ Comprehensive documentation for mcp-skillset - dynamic RAG-powered skills for co
 
 ## Documentation Structure
 
+### For Users
+**[User Documentation](user/)** - Installation and usage guides
+- Installation verification
+- Security quick start
+
+### For Developers
+**[Developer Documentation](developer/)** - Technical documentation for contributors
+- Deployment and release procedures
+- CLI integration and configuration
+- Skill builder and custom skills
+- Implementation reports and technical details
+
 ### Architecture
 **[Architecture Design](architecture/README.md)** - Comprehensive architecture documentation
 
@@ -33,6 +45,18 @@ Complete catalog of skill repositories:
 - **Integration Guide**: How to add repositories to mcp-skillset
 - **Verification Status**: Tracked status of all repositories
 
+### Release History
+**[Releases](releases/)** - Release notes and verification reports
+- Version release summaries
+- Verification reports
+- Package rename documentation
+
+### QA Reports
+**[QA Documentation](qa/)** - Test reports and quality assurance
+- Feature QA reports
+- Ticket test reports
+- Evidence documentation
+
 ### Research
 **[Skills Research](research/skills-research.md)** - Comprehensive skills ecosystem research
 
@@ -45,6 +69,11 @@ Detailed research covering:
 - DevOps and operations skills
 - Quality indicators and selection criteria
 - Installation methods and licensing
+
+### Archive
+**[Documentation Archive](archive/)** - Historical documentation
+- Work summaries and historical status reports
+- Superseded documentation versions
 
 ## Documentation Index
 
@@ -210,6 +239,6 @@ MIT License - see [LICENSE](../LICENSE) for details
 
 ---
 
-**Last Updated**: 2025-11-21
-**Status**: Early development - MVP in progress
+**Last Updated**: 2026-01-18
+**Status**: Active development - v0.7.9
 **Maintained by**: mcp-skillset project

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-01-18
+
+### Added
+- **agentskills.io specification support** ([#6](https://github.com/bobmatnyc/mcp-skillset/issues/6), [#7](https://github.com/bobmatnyc/mcp-skillset/pull/7))
+  - Backward-compatible support for agentskills.io SKILL.md format
+  - Optional spec fields: `license`, `compatibility`, `allowed-tools`
+  - Support for both flat and nested metadata formats
+  - Metadata normalization for dual-format support
+  - Spec validation warnings (non-breaking)
+  - 14 new comprehensive tests
+  - Full documentation in `docs/AGENTSKILLS_IO_COMPATIBILITY.md`
+
+---
+
 ## [0.7.9] - 2026-01-17
 
 ### Fixed

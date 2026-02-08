@@ -204,6 +204,13 @@ class GitHubDiscoveryConfig(BaseSettings):
             "anthropic-skills",
             "mcp-skills",
             "ai-skills",
+            "agent-skills",
+            "claude-code",
+            "ai-agent-skills",
+            "llm-skills",
+            "codex-skills",
+            "cursor-skills",
+            "antigravity-skills",
         ],
         description="Default search topics",
     )

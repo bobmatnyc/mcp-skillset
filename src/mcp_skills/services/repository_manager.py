@@ -90,6 +90,58 @@ class RepositoryManager:
             "priority": 80,
             "license": "MIT",
         },
+        # High-priority community collections
+        {
+            "url": "https://github.com/VoltAgent/awesome-agent-skills.git",
+            "priority": 95,
+            "license": "MIT",
+        },
+        {
+            "url": "https://github.com/sickn33/antigravity-awesome-skills.git",
+            "priority": 94,
+            "license": "MIT",
+        },
+        {
+            "url": "https://github.com/alirezarezvani/claude-skills.git",
+            "priority": 90,
+            "license": "MIT",
+        },
+        {
+            "url": "https://github.com/Jeffallan/claude-skills.git",
+            "priority": 88,
+            "license": "MIT",
+        },
+        # Domain-specific expert collections
+        {
+            "url": "https://github.com/K-Dense-AI/claude-scientific-skills.git",
+            "priority": 85,
+            "license": "MIT",
+        },
+        {
+            "url": "https://github.com/Orchestra-Research/AI-Research-SKILLs.git",
+            "priority": 85,
+            "license": "MIT",
+        },
+        {
+            "url": "https://github.com/addyosmani/web-quality-skills.git",
+            "priority": 83,
+            "license": "MIT",
+        },
+        {
+            "url": "https://github.com/zxkane/aws-skills.git",
+            "priority": 82,
+            "license": "Apache-2.0",
+        },
+        {
+            "url": "https://github.com/antonbabenko/terraform-skill.git",
+            "priority": 82,
+            "license": "MIT",
+        },
+        {
+            "url": "https://github.com/secondsky/sap-skills.git",
+            "priority": 80,
+            "license": "MIT",
+        },
     ]
 
     def __init__(self, base_dir: Path | None = None) -> None:

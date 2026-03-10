@@ -289,10 +289,16 @@ class VectorStore:
             0.92
         """
         try:
+            # Guard: return early if collection is empty to avoid Rust backend
+            # panic when n_results=0 (chromadb>=1.5 with RustBindingsAPI).
+            count = self.collection.count()
+            if count == 0:
+                return []
+
             # ChromaDB query with optional filters
             results = self.collection.query(
                 query_texts=[query],
-                n_results=min(top_k, self.collection.count()),
+                n_results=min(top_k, count),
                 where=filters if filters else None,
             )
 

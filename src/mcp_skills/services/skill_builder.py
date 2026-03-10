@@ -130,7 +130,8 @@ class SkillBuilder:
         self.templates_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize Jinja2 environment
-        self.jinja_env = Environment(
+        # autoescape=False is intentional: templates render Markdown, not HTML.  # nosec B701
+        self.jinja_env = Environment(  # nosec B701
             loader=FileSystemLoader(str(self.templates_dir)),
             trim_blocks=True,
             lstrip_blocks=True,
@@ -531,12 +532,12 @@ class SkillBuilder:
         # Load and render template
         try:
             template = self.jinja_env.get_template(f"{template_name}.md.j2")
-            return template.render(**context)
+            return str(template.render(**context))
         except TemplateNotFound:
             # If custom template not found, fall back to base
             logger.warning(f"Template '{template_name}' not found, using base template")
             template = self.jinja_env.get_template("base.md.j2")
-            return template.render(**context)
+            return str(template.render(**context))
 
     def _split_skill_content(self, content: str) -> tuple[str, str]:
         """Split SKILL.md into frontmatter and body.

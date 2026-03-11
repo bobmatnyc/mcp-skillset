@@ -7,7 +7,7 @@ via the Model Context Protocol (MCP) using hybrid RAG (vector + knowledge graph)
 from pathlib import Path
 
 
-__version__ = "0.1.0"
+__version__ = "0.8.6"
 __author__ = "MCP Skills Team"
 __license__ = "MIT"
 

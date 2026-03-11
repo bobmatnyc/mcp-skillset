@@ -67,7 +67,7 @@ When working on this project:
 
 See `docs/DEPLOY.md` for complete release workflow.
 
-**Current Version:** 0.6.3
+**Current Version:** 0.8.6
 
 ### Quick Release Steps
 

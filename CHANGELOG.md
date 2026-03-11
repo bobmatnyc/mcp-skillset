@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.6] - 2026-03-10
+
+### Fixed
+- Restrict to Python 3.11 (requires-python >=3.11,<3.12) to prevent ChromaDB 1.x Rust binding crash on Python 3.13 ARM64
+
+---
+
 ## [0.8.5] - 2026-03-10
 
 ### Changed
